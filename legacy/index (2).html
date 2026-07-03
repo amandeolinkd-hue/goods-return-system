@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LR Entry Form</title>
+  <base target="_top" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    .submit-loader {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 0.5rem;
+      max-width: 80%;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-5">
+  <div class="container mx-auto bg-white rounded-lg shadow-lg p-8 max-w-3xl">
+    <form id="lrForm" onsubmit="return handleSubmit(event)">
+      <div class="text-center">
+        <h1 class="text-5xl font-bold">LD SILK MILLS</h1>
+        <br />
+        <h2 class="text-2xl font-bold text-blue-500">Goods Return Form</h2>
+        <hr class="border-t-4 border-gray-800 my-4" />
+      </div>
+
+      <!-- Section 1: General Information -->
+      <div class="space-y-4 mb-6">
+        <h3 class="text-xl font-bold text-green-500 underline">Fill Basic Details</h3>
+        <br />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Bill No (If Any):<span class="text-blue-100 text-xl">*</span>
+            </label>
+            <input type="text" id="billNo" name="billNo" class="p-2 border rounded w-full" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1" for="entryFor">
+              Entry For <span class="text-red-500 text-xl">*</span>
+            </label>
+            <select id="entryFor" name="entryFor" class="p-2 border rounded w-full" required>
+              <option value="" disabled selected>Select an option</option>
+              <option value="Lorry Receipt (LR)">Lorry Receipt (LR)</option>
+              <option value="Letter Pad">Letter Pad</option>
+              <option value="Local Delivery">Local Delivery</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              LR No (If Any):<span class="text-blue-100 text-xl">*</span>
+            </label>
+            <input type="text" id="trackingNo" name="trackingNo" class="p-2 border rounded w-full" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Date <span class="text-red-500 text-xl">*</span>
+            </label>
+            <input type="date" id="dated" name="dated" class="p-2 border rounded w-full" required />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Posted to Bhiwandi Office On:<span class="text-blue-100 text-xl">*</span>
+            </label>
+            <input type="date" id="postedOn" name="postedOn" class="p-2 border rounded w-full" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1" for="attachment">
+              Attachment (If Any) <span class="text-blue-100 text-xl">*</span>
+            </label>
+            <input type="file" id="attachment" name="attachment" class="p-2 border rounded w-full" />
+          </div>
+        </div>
+        <hr class="border-t-4 border-gray-800 my-4" />
+      </div>
+
+      <!-- Section 2: Client and Broker Information -->
+      <div class="space-y-4 mb-6">
+        <h3 class="text-xl font-bold text-green-500 underline">Client Details</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Party Name <span class="text-red-500 text-xl">*</span>
+            </label>
+            <select id="clientName" name="clientName" class="p-2 border rounded w-full" onchange="updateBrokerList()" required>
+              <option value="">Select Party</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Broker Name <span class="text-red-500 text-xl">*</span>
+            </label>
+            <select id="brokerName" name="brokerName" class="p-2 border rounded w-full" required>
+              <option value="">Select Broker</option>
+            </select>
+          </div>
+        </div>
+        <hr class="border-t-4 border-gray-800 my-4" />
+      </div>
+
+      <!-- Section 3: Quality, Quantity, and Pieces -->
+      <div class="space-y-4 mb-6">
+        <h3 class="text-xl font-bold text-green-500 underline">Quality Details</h3>
+        <div id="qualityContainer">
+          <div class="grid grid-cols-12 gap-2 mb-2">
+            <div class="col-span-5">
+              <label class="block text-sm font-medium mb-1">
+                Quality <span class="text-red-500 text-xl">*</span>
+              </label>
+            </div>
+            <div class="col-span-3">
+              <label class="block text-sm font-medium mb-1">
+                Quantity (Mtr) <span class="text-red-500 text-xl">*</span>
+              </label>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">
+                Pcs <span class="text-blue-100 text-xl">*</span>
+              </label>
+            </div>
+          </div>
+          <div class="quality-row grid grid-cols-12 gap-2 mb-2">
+            <div class="col-span-5">
+              <select class="quality-select p-2 border rounded w-full" name="quality[]" required>
+                <option value="">Select Quality</option>
+              </select>
+            </div>
+            <div class="col-span-3">
+              <input type="number" class="p-2 border rounded w-full" name="quantity[]" placeholder="Enter Mtr/Qty" required step="any"/>
+            </div>
+            <div class="col-span-2">
+              <input type="number" class="p-2 border rounded w-full" name="pieces[]" placeholder="Pcs" />
+            </div>
+            <div class="col-span-2 flex space-x-1">
+              <button type="button" class="bg-blue-500 text-white px-3 rounded hover:bg-blue-600" onclick="addQualityRow()">+</button>
+              <button type="button" class="bg-red-500 text-white px-3 rounded hover:bg-red-600" onclick="removeQualityRow(this)">-</button>
+            </div>
+          </div>
+        </div>
+        <hr class="border-t-4 border-gray-800 my-4" />
+      </div>
+
+      <!-- Section 4: Transport Information -->
+      <div class="space-y-4 mb-6">
+        <h3 class="text-xl font-bold text-green-500 underline">Transport Details </h3>
+        <div>
+          <label class="block text-sm font-medium mb-1">
+            Transport Name <span class="text-red-500 text-xl">*</span>
+          </label>
+          <select id="transportName" name="transportName" class="p-2 border rounded w-full" required>
+            <option value="">Select Transport</option>
+          </select>
+        </div>
+        <hr class="border-t-4 border-gray-800 my-4" />
+      </div>
+
+      <!-- Section 5: Pricing and Charges -->
+      <div class="space-y-4 mb-6">
+        <h3 class="text-xl font-bold text-green-500 underline">Amount Details</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Total Billing Amount <span class="text-blue-100 text-xl">*</span>
+            </label>
+            <input type="number" id="totalValue" name="totalValue" class="p-2 border rounded w-full" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Transport (LR) Amount <span class="text-blue-100 text-xl">*</span>
+            </label>
+            <input type="number" id="transportValue" name="transportValue" class="p-2 border rounded w-full" step="any"/>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Other Charges (If Any) <span class="text-blue-100 text-xl">*</span>
+            </label>
+            <input type="number" id="otherCharges" name="otherCharges" class="p-2 border rounded w-full" value="" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">
+              Reason of Return <span class="text-red-500 text-xl">*</span>
+            </label>
+            <div class="flex flex-col">
+              <select id="returnReason" name="returnReason" class="p-2 border rounded w-full" required onchange="toggleCustomReasonInput()">
+                <option value="">Select a reason</option>
+                <option value="Bad Quality">Bad Quality</option>
+                <option value="Wrong Delivery">Wrong Delivery</option>
+                <option value="Incorrect Designs Received">Incorrect Designs Received</option>
+                <option value="Other">Other</option>
+              </select>
+              <!-- Custom Reason Input Field -->
+              <input type="text" id="customReason" name="customReason" class="p-2 border rounded w-full mt-2 hidden" placeholder="Please specify..." />
+            </div>
+          </div>
+        </div>
+        <hr class="border-t-4 border-gray-800 my-4" />
+      </div>
+
+      <!-- Submit and Preview Buttons -->
+      <div class="flex flex-col space-y-2">
+        <button type="button" class="bg-gray-600 text-white p-2 rounded hover:bg-gray-700 transition" id="previewBtn" onclick="openPreview()">
+          Preview
+        </button>
+        <button type="submit" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition" id="submitButton">
+          Submit
+        </button>
+      </div>
+    </form>
+
+    <!-- Loading Indicator -->
+    <div class="submit-loader" id="loader">
+      <div class="bg-white p-4 rounded-lg shadow-lg">
+        <p class="text-gray-700">Submitting your form...</p>
+      </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal">
+      <div class="modal-content">
+        <h3 class="text-xl font-bold mb-4">Preview Your Form Details</h3>
+        <div id="previewContent" class="mb-4"></div>
+        <div class="flex justify-end space-x-2">
+          <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="closePreview()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let isGoogleScriptLoaded = false;
+  let formData = {
+    clients: [],
+    brokerMappings: {},
+    qualities: [],
+    transports: []
+  };
+
+  // Initialize on page load
+  window.addEventListener("load", function () {
+    if (typeof google !== "undefined" && google.script) {
+      isGoogleScriptLoaded = true;
+      loadFormData();
+    } else {
+      loadMockData(); // For testing without Google Script
+    }
+  });
+
+  function loadMockData() {
+    formData = {
+      clients: ["Client A", "Client B", "Client C"],
+      brokerMappings: {
+        "Client A": ["Broker 1", "Broker 2"],
+        "Client B": ["Broker 3", "Broker 4"],
+        "Client C": ["Broker 5", "Broker 6"]
+      },
+      transports: ["Transport X", "Transport Y", "Transport Z"],
+      qualities: ["Quality 1", "Quality 2", "Quality 3"]
+    };
+    populateDropdown("clientName", formData.clients);
+    populateDropdown("transportName", formData.transports);
+    populateQualityDropdowns(formData.qualities);
+  }
+
+  function loadFormData() {
+    google.script.run
+      .withSuccessHandler(function (data) {
+        formData = data;
+        populateDropdown("clientName", data.clients);
+        populateDropdown("transportName", data.transports);
+        populateQualityDropdowns(data.qualities);
+      })
+      .withFailureHandler(function (error) {
+        console.error("Error loading form data:", error);
+        alert("Error loading form data. Please refresh the page.");
+      })
+      .getFormData();
+  }
+
+  function populateDropdown(elementId, options) {
+    const select = document.getElementById(elementId);
+    select.innerHTML = '<option value="">Select an option</option>';
+    options.forEach((option) => {
+      const opt = document.createElement("option");
+      opt.value = option;
+      opt.textContent = option;
+      select.appendChild(opt);
+    });
+  }
+
+  function populateQualityDropdowns(qualities) {
+    const dropdowns = document.getElementsByClassName("quality-select");
+    Array.from(dropdowns).forEach((dropdown) => {
+      dropdown.innerHTML = '<option value="">Select Quality</option>';
+      qualities.forEach((quality) => {
+        const option = document.createElement("option");
+        option.value = quality;
+        option.textContent = quality;
+        dropdown.appendChild(option);
+      });
+    });
+  }
+
+  function updateBrokerList() {
+    const clientName = document.getElementById("clientName").value;
+    if (isGoogleScriptLoaded) {
+      if (clientName) {
+        google.script.run
+          .withSuccessHandler(function (brokers) {
+            populateDropdown("brokerName", brokers);
+          })
+          .withFailureHandler(function (error) {
+            console.error("Error loading brokers:", error);
+            alert("Error loading broker list. Please try again.");
+          })
+          .getBrokersByClient(clientName);
+      }
+    } else {
+      // Use brokerMappings from mock data
+      const brokers = formData.brokerMappings[clientName] || [];
+      populateDropdown("brokerName", brokers);
+    }
+  }
+
+  function addQualityRow() {
+    const container = document.getElementById("qualityContainer");
+    const rows = container.getElementsByClassName("quality-row");
+    const newRow = rows[0].cloneNode(true);
+
+    // Clear input values
+    newRow.querySelectorAll("input").forEach((input) => (input.value = ""));
+    newRow.querySelector("select").selectedIndex = 0;
+
+    container.appendChild(newRow);
+  }
+
+  function removeQualityRow(button) {
+    const container = document.getElementById("qualityContainer");
+    const rows = container.getElementsByClassName("quality-row");
+    if (rows.length > 1) {
+      button.closest(".quality-row").remove();
+    }
+  }
+
+  function toggleCustomReasonInput() {
+    const returnReason = document.getElementById("returnReason").value;
+    const customReasonInput = document.getElementById("customReason");
+    
+    if (returnReason === "Other") {
+      customReasonInput.classList.remove("hidden");
+      customReasonInput.required = true;
+    } else {
+      customReasonInput.classList.add("hidden");
+      customReasonInput.required = false;
+    }
+  }
+
+  function validateForm() {
+    const form = document.getElementById("lrForm");
+    const inputs = form.querySelectorAll("input, select");
+    let isValid = true;
+
+    inputs.forEach((input) => {
+      if (input.hasAttribute("required") && !input.value) {
+        input.classList.add("error");
+        isValid = false;
+      } else {
+        input.classList.remove("error");
+      }
+    });
+
+    return isValid;
+  }
+
+  function openPreview() {
+    if (!validateForm()) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    const formDataLocal = new FormData(document.getElementById("lrForm"));
+    const previewContent = document.getElementById("previewContent");
+    let previewHTML = '<div class="space-y-4">';
+
+    for (const [key, value] of formDataLocal.entries()) {
+      if (!key.includes("[]")) {
+        previewHTML += `
+          <div class="grid grid-cols-3 gap-4">
+            <div class="font-medium">${formatLabel(key)}:</div>
+            <div class="col-span-2">${value}</div>
+          </div>
+        `;
+      }
+    }
+
+    const qualities = document.getElementsByName("quality[]");
+    const quantities = document.getElementsByName("quantity[]");
+    const pieces = document.getElementsByName("pieces[]");
+
+    previewHTML += '<div class="mt-4"><div class="font-medium mb-2">Quality Details:</div><table class="w-full"><tr><th class="text-left">Quality</th><th class="text-left">Quantity</th><th class="text-left">Pieces</th></tr>';
+    for (let i = 0; i < qualities.length; i++) {
+      previewHTML += `
+        <tr>
+          <td>${qualities[i].value}</td>
+          <td>${quantities[i].value}</td>
+          <td>${pieces[i].value}</td>
+        </tr>
+      `;
+    }
+    previewHTML += "</table></div></div>";
+
+    previewContent.innerHTML = previewHTML;
+    document.getElementById("previewModal").style.display = "flex";
+  }
+
+  function closePreview() {
+    document.getElementById("previewModal").style.display = "none";
+  }
+
+  function formatLabel(key) {
+    return key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      alert("Please fill in all required fields.");
+      return false;
+    }
+
+    document.getElementById("loader").style.display = "flex";
+
+    const formEl = document.getElementById("lrForm");
+    const formDataObj = new FormData(formEl);
+
+    // Build the data object
+    const data = {
+      billNo: formDataObj.get("billNo"),
+      entryFor: formDataObj.get("entryFor"),
+      trackingNo: formDataObj.get("trackingNo"),
+      dated: formDataObj.get("dated"),
+      postedOn: formDataObj.get("postedOn"),
+      clientName: formDataObj.get("clientName"),
+      brokerName: formDataObj.get("brokerName"),
+      qualities: Array.from(document.getElementsByName("quality[]")).map((el) => el.value),
+      quantities: Array.from(document.getElementsByName("quantity[]")).map((el) => el.value),
+      pieces: Array.from(document.getElementsByName("pieces[]")).map((el) => el.value),
+      transportName: formDataObj.get("transportName"),
+      totalValue: formDataObj.get("totalValue"),
+      transportValue: formDataObj.get("transportValue"),
+      otherCharges: formDataObj.get("otherCharges"),
+      returnReason: formDataObj.get("returnReason")
+    };
+
+    // Process the file input if a file was selected
+    const fileInput = document.getElementById("attachment");
+    if (fileInput.files.length > 0) {
+      data.fileData = fileInput.files[0];
+      data.fileName = fileInput.files[0].name;
+    }
+
+    sendDataToServer(data);
+  }
+
+function sendDataToServer(data) {
+  if (isGoogleScriptLoaded) {
+    // If there is file data, use FileReader to convert to Base64
+    if (data.fileData) {
+      const reader = new FileReader();
+      reader.onloadend = function () {
+        data.fileData = reader.result; // Base64 data
+        google.script.run
+          .withSuccessHandler(function () {
+            document.getElementById("loader").style.display = "none";
+            alert("Form submitted successfully!");
+            resetForm();  // Reset the form after submission
+          })
+          .withFailureHandler(function (error) {
+            document.getElementById("loader").style.display = "none";
+            alert("Error submitting form: " + error);
+          })
+          .submitForm(data);
+      };
+      reader.readAsDataURL(data.fileData); // Convert the file to Base64
+    } else {
+      google.script.run
+        .withSuccessHandler(function () {
+          document.getElementById("loader").style.display = "none";
+          alert("Form submitted successfully!");
+          resetForm();  // Reset the form after submission
+        })
+        .withFailureHandler(function (error) {
+          document.getElementById("loader").style.display = "none";
+          alert("Error submitting form: " + error);
+        })
+        .submitForm(data);
+    }
+  } else {
+    // In test mode without Google Script
+    setTimeout(() => {
+      document.getElementById("loader").style.display = "none";
+      alert("Form submitted successfully! (Test Mode)");
+      resetForm();  // Reset the form after submission
+    }, 1000);
+  }
+}
+
+// Function to reset the form to its original state
+function resetForm() {
+  const form = document.getElementById("lrForm");
+  form.reset(); // Reset the form fields
+
+  // Collapse all additional quality rows
+  const qualityContainer = document.getElementById("qualityContainer");
+  const qualityRows = qualityContainer.getElementsByClassName("quality-row");
+  while (qualityRows.length > 1) {
+    qualityRows[qualityRows.length - 1].remove(); // Remove any additional quality rows
+  }
+
+  // Reset the error styling for the inputs
+  const inputs = form.querySelectorAll("input, select");
+  inputs.forEach((input) => {
+    input.classList.remove("error");
+  });
+
+  // Optionally reset other dynamic elements (e.g., dropdowns) if needed
+  populateDropdown("clientName", formData.clients); // Re-populate dropdowns
+  populateDropdown("transportName", formData.transports);
+  populateQualityDropdowns(formData.qualities);
+}
+</script>
+</body>
+</html>
+
