@@ -163,6 +163,40 @@ export async function getReturnDetail(id: number) {
 
 export type ReturnDetail = NonNullable<Awaited<ReturnType<typeof getReturnDetail>>>;
 
+/** All returns matching a filter (no pagination), flattened for CSV export. */
+export async function getReturnsForExport(f: ReturnsFilter) {
+  const where = buildWhere(f);
+  return db
+    .select({
+      displayId: returns.displayId,
+      dated: returns.dated,
+      entryFor: returns.entryFor,
+      billNo: returns.billNo,
+      trackingNo: returns.trackingNo,
+      partyName: parties.name,
+      brokerName: brokers.name,
+      reason: returns.returnReason,
+      customReason: returns.customReason,
+      status: returns.status,
+      totalValue: returns.totalValue,
+      transportValue: returns.transportValue,
+      otherCharges: returns.otherCharges,
+      postedOn: returns.postedOn,
+      receivedAt: returns.receivedAt,
+      items: sql<string>`(
+        select string_agg(coalesce(ri.quality_name, q.name) || ' x' || ri.quantity ||
+          ' (' || coalesce(ri.pieces::text, '0') || ' pcs)', ' | ')
+        from ${returnItems} ri left join ${qualities} q on q.id = ri.quality_id
+        where ri.return_id = ${returns.id}
+      )`,
+    })
+    .from(returns)
+    .leftJoin(parties, eq(returns.partyId, parties.id))
+    .leftJoin(brokers, eq(returns.brokerId, brokers.id))
+    .where(where)
+    .orderBy(desc(returns.id));
+}
+
 export async function getReturnStats() {
   const [r] = await db
     .select({

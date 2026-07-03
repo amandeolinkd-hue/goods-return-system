@@ -51,17 +51,30 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
     getReturnFilterParties(),
   ]);
 
+  // Export link carries the current filters (minus pagination).
+  const exportParams = new URLSearchParams();
+  for (const k of ["search", "status", "partyId", "reason", "dateFrom", "dateTo"]) {
+    const v = str(sp[k]);
+    if (v) exportParams.set(k, v);
+  }
+  const exportHref = `/returns/export?${exportParams.toString()}`;
+
   return (
     <div className="space-y-5">
       <PageHeader
         title="All Returns"
         description={`${list.total} entr${list.total === 1 ? "y" : "ies"} found.`}
         action={
-          canCreate ? (
-            <Link href="/returns/new">
-              <Button>+ New Return</Button>
-            </Link>
-          ) : null
+          <div className="flex items-center gap-2">
+            <a href={exportHref}>
+              <Button variant="outline">Export CSV</Button>
+            </a>
+            {canCreate && (
+              <Link href="/returns/new">
+                <Button>+ New Return</Button>
+              </Link>
+            )}
+          </div>
         }
       />
 
