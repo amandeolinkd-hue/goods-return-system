@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusBadge } from "@/components/returns/status-badge";
+import { ReceiveAction } from "@/components/returns/receive-action";
 import { formatDate, formatDateTime, formatINR } from "@/lib/utils";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -30,6 +31,7 @@ export default async function ReturnDetailPage({
   const [detail, user] = await Promise.all([getReturnDetail(numId), getCurrentUser()]);
   if (!detail) notFound();
   const canEdit = hasRole(user, "admin", "kalbadevi");
+  const canReceive = hasRole(user, "admin", "bhiwandi") && detail.status === "posted";
 
   const charges =
     (Number(detail.totalValue ?? 0) || 0) +
@@ -42,8 +44,9 @@ export default async function ReturnDetailPage({
         title={detail.displayId}
         description={`${detail.entryFor} · ${detail.partyName ?? "-"}`}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge status={detail.status} />
+            {canReceive && <ReceiveAction returnId={detail.id} />}
             {canEdit && (
               <Link href={`/returns/${detail.id}/edit`}>
                 <Button variant="outline" size="sm">

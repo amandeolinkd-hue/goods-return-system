@@ -14,7 +14,9 @@
     "db:seed": "node --import tsx scripts/seed.ts",
     "db:import": "node --import tsx scripts/import.ts",
     "seed:sample": "node --import tsx scripts/seed-sample.ts",
-    "test:create": "node --import tsx scripts/test-create.ts"
+    "seed:users": "node --import tsx scripts/seed-users.ts",
+    "test:create": "node --import tsx scripts/test-create.ts",
+    "test:receive": "node --import tsx scripts/test-receive.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
