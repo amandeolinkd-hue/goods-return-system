@@ -2,8 +2,9 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Combobox } from "@/components/ui/combobox";
 import { returnInputSchema, type ReturnInput } from "@/lib/validation";
 import type { ReturnFormResult } from "@/lib/return-form";
 import type { FormMasterData } from "@/lib/master-data";
@@ -220,39 +221,42 @@ export function ReturnForm({
             <Label htmlFor="partyId" required>
               Party Name
             </Label>
-            <Select
-              id="partyId"
-              {...register("partyId")}
-              onChange={(e) => {
-                setValue("partyId", e.target.value);
-                setValue("brokerId", "");
-              }}
-            >
-              <option value="" disabled>
-                Select Party
-              </option>
-              {master.parties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="partyId"
+              render={({ field }) => (
+                <Combobox
+                  id="partyId"
+                  options={master.parties}
+                  value={field.value}
+                  onChange={(v) => {
+                    field.onChange(v);
+                    setValue("brokerId", "");
+                  }}
+                  placeholder="Search party…"
+                />
+              )}
+            />
             {err(errors.partyId?.message)}
           </div>
           <div>
             <Label htmlFor="brokerId" required>
               Broker Name
             </Label>
-            <Select id="brokerId" {...register("brokerId")} disabled={!selectedParty}>
-              <option value="" disabled>
-                {selectedParty ? "Select Broker" : "Select a party first"}
-              </option>
-              {brokerOptions.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="brokerId"
+              render={({ field }) => (
+                <Combobox
+                  id="brokerId"
+                  options={brokerOptions}
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={!selectedParty}
+                  placeholder={selectedParty ? "Select broker…" : "Select a party first"}
+                />
+              )}
+            />
             {err(errors.brokerId?.message)}
           </div>
         </CardContent>
@@ -273,16 +277,18 @@ export function ReturnForm({
           {fields.map((field, index) => (
             <div key={field.id} className="grid grid-cols-12 gap-2 items-start">
               <div className="col-span-12 sm:col-span-5">
-                <Select {...register(`items.${index}.qualityId` as const)}>
-                  <option value="" disabled>
-                    Select Quality
-                  </option>
-                  {master.qualities.map((q) => (
-                    <option key={q.id} value={q.id}>
-                      {q.name}
-                    </option>
-                  ))}
-                </Select>
+                <Controller
+                  control={control}
+                  name={`items.${index}.qualityId` as const}
+                  render={({ field }) => (
+                    <Combobox
+                      options={master.qualities}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Search quality…"
+                    />
+                  )}
+                />
                 {err(errors.items?.[index]?.qualityId?.message)}
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -326,14 +332,20 @@ export function ReturnForm({
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Label htmlFor="transportId">Transport Name</Label>
-            <Select id="transportId" {...register("transportId")}>
-              <option value="">Select Transport</option>
-              {master.transports.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="transportId"
+              render={({ field }) => (
+                <Combobox
+                  id="transportId"
+                  options={master.transports}
+                  value={field.value}
+                  onChange={field.onChange}
+                  allowClear
+                  placeholder="Search transport… (optional)"
+                />
+              )}
+            />
           </div>
           <div>
             <Label htmlFor="totalValue">Total Billing Amount</Label>

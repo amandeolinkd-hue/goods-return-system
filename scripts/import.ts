@@ -55,22 +55,36 @@ const num = (s: string | undefined): string | null => {
   return Number.isFinite(n) ? String(n) : null;
 };
 
+const iso = (y: number, mon: number, day: number): string | null => {
+  if (mon < 1 || mon > 12 || day < 1 || day > 31) return null;
+  return `${y}-${String(mon).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+};
+
 const parseDate = (s: string | undefined): string | null => {
   if (!s) return null;
   const v = String(s).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  if (!v) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  if (/^\d{4}-\d{2}-\d{2}[T ]/.test(v)) return v.slice(0, 10);
+
   const m = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
   if (m) {
-    let [, d, mo, y] = m;
-    if (y.length === 2) y = "20" + y;
-    return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+    const y = Number(m[3].length === 2 ? "20" + m[3] : m[3]);
+    // Indian locale is dd/mm; disambiguate when one component is > 12.
+    if (a > 12 && b <= 12) return iso(y, b, a); // dd/mm
+    if (b > 12 && a <= 12) return iso(y, a, b); // mm/dd
+    return iso(y, b, a); // ambiguous -> assume dd/mm
   }
   if (/^\d{5}$/.test(v)) {
     const d = new Date((Number(v) - 25569) * 86400000);
     if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
   }
   const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  if (Number.isNaN(d.getTime())) return null;
+  const out = d.toISOString().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(out) ? out : null; // reject 6-digit years etc.
 };
 
 const REASONS = ["Bad Quality", "Wrong Delivery", "Incorrect Designs Received", "Other"];
@@ -174,10 +188,12 @@ async function main() {
     for (const row of bhiwandi.slice(1)) {
       const id = String(row[0] ?? "").trim().toUpperCase();
       if (!/^LD-\d+/.test(id)) continue;
-      const statusText = String(row[18] ?? "").trim().toLowerCase();
+      // Bhiwandi columns: 13 Transport(Balasaheb) | 16 Bhiwandi charges |
+      // 17 Total Transport Charges | 18 Status Updated On | 19 Status
+      const statusText = String(row[19] ?? "").trim().toLowerCase();
       if (statusText !== "received") continue; // only received rows carry receipt data
       recvMap.set(id, {
-        receivedAt: parseDate(row[17]),
+        receivedAt: parseDate(row[18]),
         bhiwandiTransportValue: num(row[13]),
         bhiwandiCharges: num(row[16]),
       });
@@ -233,6 +249,7 @@ async function main() {
         continue;
       }
 
+      try {
       await db.transaction(async (tx) => {
         const [ret] = await tx
           .insert(returns)
@@ -278,6 +295,9 @@ async function main() {
         if (items.length) await tx.insert(returnItems).values(items);
       });
       inserted++;
+      } catch (e) {
+        warnings.push(`${displayId}: insert failed — ` + ((e as Error).message ?? "").slice(0, 100));
+      }
     }
   }
 

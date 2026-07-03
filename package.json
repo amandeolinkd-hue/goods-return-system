@@ -14,6 +14,7 @@
     "db:seed": "node --import tsx scripts/seed.ts",
     "db:import": "node --import tsx scripts/import.ts",
     "csv:inspect": "node --import tsx scripts/inspect-csv.ts",
+    "db:reset-data": "node --import tsx scripts/reset-data.ts",
     "seed:sample": "node --import tsx scripts/seed-sample.ts",
     "seed:users": "node --import tsx scripts/seed-users.ts",
     "test:create": "node --import tsx scripts/test-create.ts",
