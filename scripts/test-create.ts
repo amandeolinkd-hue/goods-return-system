@@ -16,7 +16,7 @@ async function main() {
     throw new Error("Run `npm run seed:sample` first (need parties, brokers, qualities).");
   }
 
-  const displayId = await insertReturn(
+  const { displayId } = await insertReturn(
     {
       billNo: "TEST-001",
       entryFor: "Lorry Receipt (LR)",

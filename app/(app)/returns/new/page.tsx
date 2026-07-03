@@ -3,6 +3,7 @@ import { getFormMasterData } from "@/lib/master-data";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { ReturnForm } from "./return-form";
+import { createReturn } from "./actions";
 
 export const metadata = { title: "New Return · Goods Return System" };
 
@@ -18,7 +19,7 @@ export default async function NewReturnPage() {
         description="Record a return to post to the Bhiwandi office."
       />
       {hasMaster ? (
-        <ReturnForm master={master} />
+        <ReturnForm master={master} action={createReturn} />
       ) : (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">

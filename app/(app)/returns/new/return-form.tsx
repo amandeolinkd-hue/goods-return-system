@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createReturn, type CreateReturnState } from "./actions";
 import { returnInputSchema, type ReturnInput } from "@/lib/validation";
+import type { ReturnFormResult } from "@/lib/return-form";
 import type { FormMasterData } from "@/lib/master-data";
 import { ENTRY_FOR_OPTIONS, RETURN_REASONS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -13,13 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type Props = { master: FormMasterData };
-
-const emptyItem = { qualityId: "", quantity: "", pieces: "" };
-
-// The form works with string inputs; the zod resolver coerces to the typed
-// ReturnInput passed to onSubmit.
-type FormValues = {
+export type FormValues = {
   billNo: string;
   entryFor: string;
   trackingNo: string;
@@ -36,7 +31,9 @@ type FormValues = {
   items: { qualityId: string; quantity: string; pieces: string }[];
 };
 
-const defaultValues: FormValues = {
+const emptyItem = { qualityId: "", quantity: "", pieces: "" };
+
+const blankValues: FormValues = {
   billNo: "",
   entryFor: "",
   trackingNo: "",
@@ -53,8 +50,27 @@ const defaultValues: FormValues = {
   items: [{ ...emptyItem }],
 };
 
-export function ReturnForm({ master }: Props) {
-  const [result, setResult] = useState<CreateReturnState | null>(null);
+type Props = {
+  master: FormMasterData;
+  action: (formData: FormData) => Promise<ReturnFormResult>;
+  mode?: "create" | "edit";
+  initial?: FormValues;
+  returnId?: number;
+  existingAttachmentUrl?: string | null;
+  submitLabel?: string;
+};
+
+export function ReturnForm({
+  master,
+  action,
+  mode = "create",
+  initial,
+  returnId,
+  existingAttachmentUrl,
+  submitLabel,
+}: Props) {
+  const router = useRouter();
+  const [result, setResult] = useState<ReturnFormResult | null>(null);
   const [isPending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +85,7 @@ export function ReturnForm({ master }: Props) {
   } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(returnInputSchema as any),
-    defaultValues,
+    defaultValues: initial ?? blankValues,
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
@@ -83,6 +99,7 @@ export function ReturnForm({ master }: Props) {
 
   const onValid = (values: ReturnInput) => {
     const fd = new FormData();
+    if (mode === "edit" && returnId) fd.set("returnId", String(returnId));
     fd.set("billNo", values.billNo ?? "");
     fd.set("entryFor", values.entryFor);
     fd.set("trackingNo", values.trackingNo ?? "");
@@ -102,12 +119,17 @@ export function ReturnForm({ master }: Props) {
     if (file) fd.set("attachment", file);
 
     startTransition(async () => {
-      const res = await createReturn({}, fd);
+      const res = await action(fd);
       setResult(res);
-      if (res.displayId) {
-        reset(defaultValues);
-        if (fileRef.current) fileRef.current.value = "";
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      if (!res.error) {
+        if (mode === "edit" && returnId) {
+          router.push(`/returns/${returnId}`);
+          router.refresh();
+        } else {
+          reset(blankValues);
+          if (fileRef.current) fileRef.current.value = "";
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
       }
     });
   };
@@ -117,7 +139,7 @@ export function ReturnForm({ master }: Props) {
 
   return (
     <form onSubmit={handleSubmit((v) => onValid(v as unknown as ReturnInput))} className="space-y-6">
-      {result?.displayId && (
+      {result?.displayId && mode === "create" && (
         <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
           Return <strong>{result.displayId}</strong> saved successfully.
         </div>
@@ -142,7 +164,7 @@ export function ReturnForm({ master }: Props) {
             <Label htmlFor="entryFor" required>
               Entry For
             </Label>
-            <Select id="entryFor" {...register("entryFor")} defaultValue="">
+            <Select id="entryFor" {...register("entryFor")}>
               <option value="" disabled>
                 Select an option
               </option>
@@ -170,8 +192,20 @@ export function ReturnForm({ master }: Props) {
             <Input id="postedOn" type="date" {...register("postedOn")} />
           </div>
           <div>
-            <Label htmlFor="attachment">Attachment (if any)</Label>
+            <Label htmlFor="attachment">
+              Attachment {mode === "edit" ? "(replace)" : "(if any)"}
+            </Label>
             <Input id="attachment" type="file" ref={fileRef} />
+            {existingAttachmentUrl && (
+              <a
+                href={existingAttachmentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-block text-xs text-primary hover:underline"
+              >
+                View current attachment
+              </a>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -189,7 +223,6 @@ export function ReturnForm({ master }: Props) {
             <Select
               id="partyId"
               {...register("partyId")}
-              defaultValue=""
               onChange={(e) => {
                 setValue("partyId", e.target.value);
                 setValue("brokerId", "");
@@ -210,7 +243,7 @@ export function ReturnForm({ master }: Props) {
             <Label htmlFor="brokerId" required>
               Broker Name
             </Label>
-            <Select id="brokerId" {...register("brokerId")} defaultValue="" disabled={!selectedParty}>
+            <Select id="brokerId" {...register("brokerId")} disabled={!selectedParty}>
               <option value="" disabled>
                 {selectedParty ? "Select Broker" : "Select a party first"}
               </option>
@@ -240,7 +273,7 @@ export function ReturnForm({ master }: Props) {
           {fields.map((field, index) => (
             <div key={field.id} className="grid grid-cols-12 gap-2 items-start">
               <div className="col-span-12 sm:col-span-5">
-                <Select {...register(`items.${index}.qualityId` as const)} defaultValue="">
+                <Select {...register(`items.${index}.qualityId` as const)}>
                   <option value="" disabled>
                     Select Quality
                   </option>
@@ -293,7 +326,7 @@ export function ReturnForm({ master }: Props) {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Label htmlFor="transportId">Transport Name</Label>
-            <Select id="transportId" {...register("transportId")} defaultValue="">
+            <Select id="transportId" {...register("transportId")}>
               <option value="">Select Transport</option>
               {master.transports.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -318,7 +351,7 @@ export function ReturnForm({ master }: Props) {
             <Label htmlFor="returnReason" required>
               Reason of Return
             </Label>
-            <Select id="returnReason" {...register("returnReason")} defaultValue="">
+            <Select id="returnReason" {...register("returnReason")}>
               <option value="" disabled>
                 Select a reason
               </option>
@@ -341,11 +374,18 @@ export function ReturnForm({ master }: Props) {
 
       <div className="flex items-center gap-3">
         <Button type="submit" size="lg" disabled={isPending}>
-          {isPending ? "Submitting…" : "Submit return"}
+          {isPending ? "Saving…" : submitLabel ?? "Submit return"}
         </Button>
-        <span className="text-sm text-muted-foreground">
-          A unique LD-#### id is assigned automatically.
-        </span>
+        {mode === "edit" && returnId && (
+          <Button type="button" variant="outline" onClick={() => router.push(`/returns/${returnId}`)}>
+            Cancel
+          </Button>
+        )}
+        {mode === "create" && (
+          <span className="text-sm text-muted-foreground">
+            A unique LD-#### id is assigned automatically.
+          </span>
+        )}
       </div>
     </form>
   );
