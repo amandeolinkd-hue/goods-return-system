@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusBadge } from "@/components/returns/status-badge";
 import { formatDate, formatINR } from "@/lib/utils";
+import { ClipboardList, PackageCheck, Truck, CalendarDays } from "lucide-react";
 
 export const metadata = { title: "Dashboard · Goods Return System" };
 
@@ -35,10 +36,16 @@ export default async function DashboardPage() {
       />
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total returns" value={stats.total} />
-        <StatCard label="Awaiting receipt" value={stats.posted} hint="Posted to Bhiwandi" />
-        <StatCard label="Received" value={stats.received} />
-        <StatCard label="This month" value={stats.thisMonth} />
+        <StatCard label="Total returns" value={stats.total} icon={ClipboardList} tone="primary" />
+        <StatCard
+          label="Awaiting receipt"
+          value={stats.posted}
+          hint="Posted to Bhiwandi"
+          icon={Truck}
+          tone="warning"
+        />
+        <StatCard label="Received" value={stats.received} icon={PackageCheck} tone="success" />
+        <StatCard label="This month" value={stats.thisMonth} icon={CalendarDays} tone="muted" />
       </div>
 
       <Card>
