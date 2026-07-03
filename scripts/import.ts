@@ -1,39 +1,45 @@
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
 import { parse } from "csv-parse/sync";
 
 /*
  * Migrates the legacy Google Sheets into Neon.
  *
- * Expects CSV exports in ./data :
- *   - dropdown.csv   (columns: Client | Broker | Quality | Transport, with header)
- *   - kalbadevi.csv  (the "Kalbadevi Office Entry" sheet, submitForm column order)
- *   - bhiwandi.csv   (optional — used to mark returns as received)
+ * Put the CSV exports in ./data — filenames just need to CONTAIN these keywords
+ * (case-insensitive): "dropdown", "kalbadevi", "bhiwandi".
  *
- * Kalbadevi column order (from the old submitForm):
- *   0 LD id | 1 Bill No | 2 Entry For | 3 LR/Tracking | 4 Date | 5 Posted On |
- *   6 Client | 7 Broker | 8 Qualities(|) | 9 Quantities(|) | 10 Pieces(|) |
- *   11 Transport | 12 Total | 13 Transport Amt | 14 Other Charges | 15 Reason | 16 Attachment
+ * Kalbadevi column order (0-indexed):
+ *   0 LD id | 1 Bill | 2 Entry Choice | 3 Tracking/LR | 4 Dated | 5 Posted On |
+ *   6 Party | 7 Broker | 8 Fabric(|/) | 9 QTY(|/) | 10 PCS(|/) | 11 Transport |
+ *   12 Total | 13 Transport Value | 14 Other Charges | 15 Reason
  *
- * Run:  npm run db:import           (writes to Neon)
- *       npm run db:import -- --dry  (parse + report only, no writes)
+ * Bhiwandi column order adds:
+ *   13 Transport Value (Balasaheb) | 16 Bhiwandi transport & other charges |
+ *   17 Status Updated On | 18 Status (Received/Pending)
+ *
+ * Run:  npm run db:import           (writes)
+ *       npm run db:import -- --dry  (report only)
  */
 
 const DATA_DIR = "data";
 const DRY = process.argv.includes("--dry") || process.argv.includes("--dry-run");
 
-const readCsv = (name: string): string[][] | null => {
-  const p = join(DATA_DIR, name);
-  if (!existsSync(p)) return null;
-  return parse(readFileSync(p, "utf8"), {
+function findCsv(keyword: string): string[][] | null {
+  if (!existsSync(DATA_DIR)) return null;
+  const file = readdirSync(DATA_DIR).find(
+    (f) => f.toLowerCase().endsWith(".csv") && f.toLowerCase().includes(keyword)
+  );
+  if (!file) return null;
+  return parse(readFileSync(join(DATA_DIR, file), "utf8"), {
     relax_column_count: true,
     skip_empty_lines: true,
     trim: true,
+    bom: true,
   }) as string[][];
-};
+}
 
 const splitMulti = (s: string | undefined): string[] =>
   String(s ?? "")
@@ -44,26 +50,23 @@ const splitMulti = (s: string | undefined): string[] =>
 const num = (s: string | undefined): string | null => {
   if (s == null) return null;
   const cleaned = String(s).replace(/[₹,\s]/g, "");
-  if (cleaned === "") return null;
+  if (cleaned === "" || cleaned === "-") return null;
   const n = Number(cleaned);
   return Number.isFinite(n) ? String(n) : null;
 };
 
-/** Parse a sheet date (ISO, dd/mm/yyyy, dd-mm-yyyy, or Google serial) -> YYYY-MM-DD. */
 const parseDate = (s: string | undefined): string | null => {
   if (!s) return null;
   const v = String(s).trim();
   if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
-  let m = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+  const m = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
   if (m) {
     let [, d, mo, y] = m;
     if (y.length === 2) y = "20" + y;
     return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
   }
   if (/^\d{5}$/.test(v)) {
-    // Google/Excel serial date (days since 1899-12-30)
-    const ms = (Number(v) - 25569) * 86400000;
-    const d = new Date(ms);
+    const d = new Date((Number(v) - 25569) * 86400000);
     if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
   }
   const d = new Date(v);
@@ -77,12 +80,18 @@ async function main() {
   const { db } = await import("../db/index");
   const schema = await import("../db/schema");
   const { parties, brokers, qualities, transports, partyBrokers, returns, returnItems } = schema;
-  const { sql, eq } = await import("drizzle-orm");
+  const { sql } = await import("drizzle-orm");
 
   console.log(DRY ? "DRY RUN — no writes\n" : "IMPORT — writing to Neon\n");
 
-  // ---------- 1. Master data (dropdown.csv) ----------
-  const dropdown = readCsv("dropdown.csv");
+  const dropdown = findCsv("dropdown");
+  const kal = findCsv("kalbadevi");
+  const bhiwandi = findCsv("bhiwandi");
+  console.log(
+    `Files: dropdown=${dropdown ? "yes" : "no"} kalbadevi=${kal ? kal.length - 1 + " rows" : "no"} bhiwandi=${bhiwandi ? bhiwandi.length - 1 + " rows" : "no"}\n`
+  );
+
+  // ---------- 1. Collect master data (dropdown + referenced in entries) ----------
   const partySet = new Set<string>();
   const brokerSet = new Set<string>();
   const qualitySet = new Set<string>();
@@ -99,9 +108,6 @@ async function main() {
       if (client?.trim() && broker?.trim()) pbPairs.push([client.trim(), broker.trim()]);
     }
   }
-
-  // ---------- 2. Pre-scan entries so master data covers everything referenced ----------
-  const kal = readCsv("kalbadevi.csv");
   if (kal) {
     for (const row of kal.slice(1)) {
       if (row[6]?.trim()) partySet.add(row[6].trim());
@@ -111,7 +117,6 @@ async function main() {
       if (row[6]?.trim() && row[7]?.trim()) pbPairs.push([row[6].trim(), row[7].trim()]);
     }
   }
-
   console.log(
     `Master: ${partySet.size} parties, ${brokerSet.size} brokers, ${qualitySet.size} qualities, ${transportSet.size} transports`
   );
@@ -122,7 +127,10 @@ async function main() {
   ): Promise<Map<string, number>> => {
     const list = [...names];
     if (!DRY && list.length) {
-      await db.insert(table).values(list.map((name) => ({ name }))).onConflictDoNothing();
+      // Insert in chunks to stay within statement limits.
+      for (let i = 0; i < list.length; i += 500) {
+        await db.insert(table).values(list.slice(i, i + 500).map((name) => ({ name }))).onConflictDoNothing();
+      }
     }
     const map = new Map<string, number>();
     if (!DRY) {
@@ -150,23 +158,34 @@ async function main() {
         values.push({ partyId: pid, brokerId: bid });
       }
     }
-    if (values.length) await db.insert(partyBrokers).values(values).onConflictDoNothing();
+    for (let i = 0; i < values.length; i += 500) {
+      await db.insert(partyBrokers).values(values.slice(i, i + 500)).onConflictDoNothing();
+    }
   }
 
-  // ---------- 3. Bhiwandi received set (optional) ----------
-  const received = new Map<string, string | null>(); // displayId -> receivedAt date
-  const bhiwandi = readCsv("bhiwandi.csv");
+  // ---------- 2. Bhiwandi receiving data, keyed by LD id ----------
+  type Recv = {
+    receivedAt: string | null;
+    bhiwandiTransportValue: string | null;
+    bhiwandiCharges: string | null;
+  };
+  const recvMap = new Map<string, Recv>();
   if (bhiwandi) {
     for (const row of bhiwandi.slice(1)) {
-      const idCell = row.find((c) => /^LD-\d+/i.test(String(c).trim()));
-      if (!idCell) continue;
-      const dateCell = row.map(parseDate).find(Boolean) ?? null;
-      received.set(idCell.trim().toUpperCase(), dateCell);
+      const id = String(row[0] ?? "").trim().toUpperCase();
+      if (!/^LD-\d+/.test(id)) continue;
+      const statusText = String(row[18] ?? "").trim().toLowerCase();
+      if (statusText !== "received") continue; // only received rows carry receipt data
+      recvMap.set(id, {
+        receivedAt: parseDate(row[17]),
+        bhiwandiTransportValue: num(row[13]),
+        bhiwandiCharges: num(row[16]),
+      });
     }
-    console.log(`Bhiwandi: ${received.size} received markers`);
+    console.log(`Bhiwandi: ${recvMap.size} received rows`);
   }
 
-  // ---------- 4. Entries (kalbadevi.csv) ----------
+  // ---------- 3. Entries (kalbadevi) ----------
   let inserted = 0;
   let maxSeq = 0;
   const warnings: string[] = [];
@@ -175,7 +194,7 @@ async function main() {
     for (const [i, row] of kal.slice(1).entries()) {
       const displayId = String(row[0] ?? "").trim().toUpperCase();
       if (!/^LD-\d+/.test(displayId)) {
-        warnings.push(`Row ${i + 2}: missing/invalid LD id ("${row[0]}") — skipped`);
+        warnings.push(`Row ${i + 2}: invalid LD id ("${row[0]}") — skipped`);
         continue;
       }
       const seqNum = Number(displayId.replace(/^LD-/, ""));
@@ -207,8 +226,7 @@ async function main() {
       const pcs = splitMulti(row[10]);
       const lines = Math.max(qs.length, 1);
 
-      const rec = received.get(displayId);
-      const isReceived = received.has(displayId);
+      const recv = recvMap.get(displayId);
 
       if (DRY) {
         inserted++;
@@ -233,15 +251,17 @@ async function main() {
             otherCharges: num(row[14]),
             returnReason,
             customReason,
-            attachmentUrl: row[16]?.trim() || null,
-            status: isReceived ? "received" : "posted",
-            receivedAt: isReceived && rec ? new Date(rec) : null,
+            attachmentUrl: null,
+            status: recv ? "received" : "posted",
+            receivedAt: recv?.receivedAt ? new Date(recv.receivedAt) : null,
+            bhiwandiTransportValue: recv?.bhiwandiTransportValue ?? null,
+            bhiwandiCharges: recv?.bhiwandiCharges ?? null,
             createdBy: null,
           })
           .onConflictDoNothing({ target: returns.displayId })
           .returning({ id: returns.id });
 
-        if (!ret) return; // already imported
+        if (!ret) return;
 
         const items = [];
         for (let j = 0; j < lines; j++) {
@@ -251,7 +271,7 @@ async function main() {
             returnId: ret.id,
             qualityId: qualityMap.get(qn) ?? null,
             qualityName: qn,
-            quantity: num(qtys[j] ?? qtys[0]) ?? null,
+            quantity: num(qtys[j] ?? qtys[0]),
             pieces: pcs[j] ? Math.trunc(Number(pcs[j])) || null : null,
           });
         }
@@ -261,13 +281,13 @@ async function main() {
     }
   }
 
-  // ---------- 5. Continue the LD sequence past the highest imported id ----------
+  // ---------- 4. Continue the LD sequence ----------
   if (!DRY && maxSeq > 0) {
     await db.execute(sql`select setval('return_display_seq', ${maxSeq}, true)`);
-    console.log(`Sequence set to ${maxSeq}; next new id = LD-${String(maxSeq + 1).padStart(4, "0")}`);
+    console.log(`\nSequence set to ${maxSeq}; next new id = LD-${String(maxSeq + 1).padStart(4, "0")}`);
   }
 
-  console.log(`\n${DRY ? "Would import" : "Imported"} ${inserted} returns.`);
+  console.log(`${DRY ? "Would import" : "Imported"} ${inserted} returns; ${recvMap.size} marked received.`);
   if (warnings.length) {
     console.log(`\n${warnings.length} warnings:`);
     warnings.slice(0, 40).forEach((w) => console.log("  ! " + w));

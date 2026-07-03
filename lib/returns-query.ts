@@ -124,6 +124,8 @@ export async function getReturnDetail(id: number) {
       createdByName: creator.name,
       receivedAt: returns.receivedAt,
       receivingNotes: returns.receivingNotes,
+      bhiwandiTransportValue: returns.bhiwandiTransportValue,
+      bhiwandiCharges: returns.bhiwandiCharges,
     })
     .from(returns)
     .leftJoin(parties, eq(returns.partyId, parties.id))
@@ -183,6 +185,8 @@ export async function getReturnsForExport(f: ReturnsFilter) {
       otherCharges: returns.otherCharges,
       postedOn: returns.postedOn,
       receivedAt: returns.receivedAt,
+      bhiwandiTransportValue: returns.bhiwandiTransportValue,
+      bhiwandiCharges: returns.bhiwandiCharges,
       items: sql<string>`(
         select string_agg(coalesce(ri.quality_name, q.name) || ' x' || ri.quantity ||
           ' (' || coalesce(ri.pieces::text, '0') || ' pcs)', ' | ')

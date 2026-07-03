@@ -96,9 +96,15 @@ export const returns = pgTable("returns", {
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   // Bhiwandi receiving confirmation (replaces the onEdit timestamp trigger).
+  // receivedAt = the sheet's "Status Updated On"; status "posted" == "Pending".
   receivedBy: integer("received_by").references(() => users.id),
   receivedAt: timestamp("received_at", { withTimezone: true }),
   receivingNotes: text("receiving_notes"),
+  // Amounts entered at the Bhiwandi office during receiving.
+  // "Transport Value Entry From BALASAHEB" (sheet column N).
+  bhiwandiTransportValue: numeric("bhiwandi_transport_value", { precision: 14, scale: 2 }),
+  // "BHIWANDI TRANSPORT VALUE AND OTHER CHARGES" (sheet column Q).
+  bhiwandiCharges: numeric("bhiwandi_charges", { precision: 14, scale: 2 }),
 });
 
 // ---- Return line items (replaces the "|"-joined quality/qty/pcs columns) ----

@@ -95,7 +95,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
               <Label htmlFor="status">Status</Label>
               <Select id="status" name="status" defaultValue={str(sp.status)}>
                 <option value="">All</option>
-                <option value="posted">Posted</option>
+                <option value="posted">Pending</option>
                 <option value="received">Received</option>
               </Select>
             </div>

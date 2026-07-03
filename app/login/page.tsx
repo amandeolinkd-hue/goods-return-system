@@ -1,78 +1,41 @@
 import { Suspense } from "react";
-import { Package, ClipboardCheck, BarChart3, ShieldCheck } from "lucide-react";
+import { Package, ShieldCheck } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
 
 export const metadata = {
   title: "Sign in · Goods Return System",
 };
 
-const FEATURES = [
-  { icon: Package, title: "Fast goods-return entry", desc: "Capture returns with party, broker and quality lines in seconds." },
-  { icon: ClipboardCheck, title: "Two-office workflow", desc: "Kalbadevi posts, Bhiwandi confirms receipt — fully tracked." },
-  { icon: BarChart3, title: "Live reporting", desc: "Totals by party, reason and month, exportable to CSV." },
-];
-
 export default function LoginPage() {
   return (
-    <main className="min-h-screen grid lg:grid-cols-2">
-      {/* Brand panel */}
-      <div className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-brand-gradient p-12 text-white">
-        <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-black/10 blur-2xl" />
-
-        <div className="relative flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur ring-1 ring-white/25">
-            <Package className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="text-lg font-bold tracking-tight leading-none">LD SILK MILLS</div>
-            <div className="text-xs text-white/70 mt-1">Goods Return System</div>
-          </div>
-        </div>
-
-        <div className="relative space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold leading-tight">
-              Returns, receiving &amp; reporting — in one place.
-            </h1>
-            <p className="mt-3 text-white/80 max-w-md">
-              The modern replacement for the spreadsheet: faster entry, a real audit
-              trail across both offices, and instant visibility.
-            </p>
-          </div>
-          <ul className="space-y-5">
-            {FEATURES.map((f) => (
-              <li key={f.title} className="flex gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
-                  <f.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="font-medium">{f.title}</div>
-                  <div className="text-sm text-white/70">{f.desc}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="relative flex items-center gap-2 text-sm text-white/70">
-          <ShieldCheck className="h-4 w-4" />
-          Authorized staff access only
-        </div>
+    <main className="relative min-h-screen overflow-hidden bg-[#0a0f1e] flex items-center justify-center p-4">
+      {/* Aurora background */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="aurora-blob aurora-1 -left-40 -top-40 h-[36rem] w-[36rem] bg-[#4f46e5]" />
+        <div className="aurora-blob aurora-2 -right-32 -top-24 h-[32rem] w-[32rem] bg-[#7c3aed]" />
+        <div className="aurora-blob aurora-3 left-1/3 -bottom-40 h-[34rem] w-[34rem] bg-[#2563eb]" />
+        <div className="aurora-blob aurora-2 right-1/4 bottom-0 h-[24rem] w-[24rem] bg-[#db2777] opacity-40" />
+        {/* subtle grid + darkening vignette */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1e]/20 via-transparent to-[#0a0f1e]/70" />
       </div>
 
-      {/* Form panel */}
-      <div className="flex items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-sm animate-fade-in">
-          {/* Mobile brand */}
-          <div className="lg:hidden mb-8 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-md">
-              <Package className="h-6 w-6" />
+      {/* Card */}
+      <div className="relative w-full max-w-md animate-rise-in">
+        <div className="rounded-3xl border border-white/15 bg-white/95 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-lg shadow-primary/30">
+              <Package className="h-7 w-7" />
             </div>
-            <div>
-              <div className="text-lg font-bold tracking-tight leading-none">LD SILK MILLS</div>
-              <div className="text-xs text-muted-foreground mt-1">Goods Return System</div>
-            </div>
+            <h1 className="mt-4 text-xl font-bold tracking-tight">LD SILK MILLS</h1>
+            <p className="text-sm text-muted-foreground">Goods Return System</p>
           </div>
 
           <div className="mb-6">
@@ -85,11 +48,12 @@ export default function LoginPage() {
           <Suspense>
             <LoginForm />
           </Suspense>
-
-          <p className="mt-8 text-center text-xs text-muted-foreground">
-            © LD Silk Mills · Internal system
-          </p>
         </div>
+
+        <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-white/50">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Authorized staff access only · © LD Silk Mills
+        </p>
       </div>
     </main>
   );

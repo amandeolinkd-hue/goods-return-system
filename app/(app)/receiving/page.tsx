@@ -57,7 +57,7 @@ export default async function ReceivingPage() {
                     <TD className="text-muted-foreground">{r.returnReason}</TD>
                     <TD className="text-right tabular-nums">{formatINR(r.totalValue)}</TD>
                     <TD className="pr-6">
-                      <ReceiveAction returnId={r.id} />
+                      <ReceiveAction returnId={r.id} displayId={r.displayId} />
                     </TD>
                   </TR>
                 ))

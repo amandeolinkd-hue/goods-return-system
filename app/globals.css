@@ -130,3 +130,41 @@ body {
   to { opacity: 1; transform: none; }
 }
 .animate-fade-in { animation: fade-in 0.25s ease-out both; }
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-rise-in { animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ---- Aurora / mesh gradient login background ---- */
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.55;
+  will-change: transform;
+}
+@keyframes aurora-1 {
+  0%   { transform: translate(-10%, -10%) scale(1); }
+  50%  { transform: translate(12%, 8%) scale(1.25); }
+  100% { transform: translate(-10%, -10%) scale(1); }
+}
+@keyframes aurora-2 {
+  0%   { transform: translate(10%, 0%) scale(1.1); }
+  50%  { transform: translate(-8%, 14%) scale(0.9); }
+  100% { transform: translate(10%, 0%) scale(1.1); }
+}
+@keyframes aurora-3 {
+  0%   { transform: translate(0%, 10%) scale(1); }
+  50%  { transform: translate(14%, -10%) scale(1.2); }
+  100% { transform: translate(0%, 10%) scale(1); }
+}
+.aurora-1 { animation: aurora-1 16s ease-in-out infinite; }
+.aurora-2 { animation: aurora-2 20s ease-in-out infinite; }
+.aurora-3 { animation: aurora-3 24s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-1, .aurora-2, .aurora-3 { animation: none; }
+  .animate-rise-in, .animate-fade-in { animation: none; }
+}

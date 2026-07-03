@@ -46,7 +46,7 @@ export default async function ReturnDetailPage({
         action={
           <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge status={detail.status} />
-            {canReceive && <ReceiveAction returnId={detail.id} />}
+            {canReceive && <ReceiveAction returnId={detail.id} displayId={detail.displayId} />}
             {canEdit && (
               <Link href={`/returns/${detail.id}/edit`}>
                 <Button variant="outline" size="sm">
@@ -149,14 +149,22 @@ export default async function ReturnDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Tracking</CardTitle>
+            <CardTitle>Receiving (Bhiwandi)</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid gap-4 grid-cols-2">
               <Field label="Created by" value={detail.createdByName} />
               <Field label="Created at" value={formatDateTime(detail.createdAt)} />
               <Field label="Received by" value={detail.receivedByName} />
-              <Field label="Received at" value={formatDateTime(detail.receivedAt)} />
+              <Field label="Status updated on" value={formatDateTime(detail.receivedAt)} />
+              <Field
+                label="Transport value (Balasaheb)"
+                value={formatINR(detail.bhiwandiTransportValue)}
+              />
+              <Field
+                label="Bhiwandi transport & charges"
+                value={formatINR(detail.bhiwandiCharges)}
+              />
               {detail.receivingNotes && (
                 <div className="col-span-2">
                   <Field label="Receiving notes" value={detail.receivingNotes} />

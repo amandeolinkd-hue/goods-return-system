@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/rbac";
 import { getReturnsForExport, type ReturnStatus } from "@/lib/returns-query";
 import { toCsv } from "@/lib/csv";
+import { statusLabel } from "@/lib/status";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
@@ -33,7 +34,9 @@ export async function GET(req: NextRequest) {
     "Transport Value",
     "Other Charges",
     "Posted On",
-    "Received At",
+    "Status Updated On",
+    "Transport Value (Balasaheb)",
+    "Bhiwandi Transport & Charges",
     "Quality Lines",
   ];
   const data = rows.map((r) => [
@@ -46,12 +49,14 @@ export async function GET(req: NextRequest) {
     r.brokerName,
     r.reason,
     r.customReason,
-    r.status,
+    statusLabel(r.status),
     r.totalValue,
     r.transportValue,
     r.otherCharges,
     formatDate(r.postedOn),
     r.receivedAt ? formatDateTime(r.receivedAt) : "",
+    r.bhiwandiTransportValue,
+    r.bhiwandiCharges,
     r.items,
   ]);
 

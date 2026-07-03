@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { formatINR } from "@/lib/utils";
+import { statusLabel } from "@/lib/status";
 
 export const metadata = { title: "Reports · Goods Return System" };
 
@@ -47,7 +48,7 @@ export default async function ReportsPage() {
               <TBody>
                 {byStatus.map((s) => (
                   <TR key={s.status}>
-                    <TD className="pl-6 capitalize">{s.status}</TD>
+                    <TD className="pl-6">{statusLabel(s.status)}</TD>
                     <TD className="text-right tabular-nums">{s.n}</TD>
                     <TD className="text-right pr-6 tabular-nums">{formatINR(s.value)}</TD>
                   </TR>
