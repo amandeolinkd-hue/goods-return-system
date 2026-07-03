@@ -1,25 +1,31 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronsUpDown, Check, Search, X } from "lucide-react";
+import { ChevronsUpDown, Check, Search, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ComboOption = { id: number; name: string };
+type Option = { id: number; name: string };
 
-const LIMIT = 60;
-
-export function Combobox({
-  options,
+/**
+ * Combobox whose options come from /api/master (server-side search).
+ * Keeps pages light — nothing is preloaded; results stream in as you type.
+ */
+export function AsyncCombobox({
+  type,
   value,
+  initialLabel,
   onChange,
-  placeholder = "Select…",
+  params,
+  placeholder = "Search…",
   disabled,
   allowClear,
   id,
 }: {
-  options: ComboOption[];
+  type: "party" | "broker" | "quality" | "transport";
   value: string;
-  onChange: (value: string) => void;
+  initialLabel?: string;
+  onChange: (id: string, name: string) => void;
+  params?: Record<string, string>;
   placeholder?: string;
   disabled?: boolean;
   allowClear?: boolean;
@@ -27,19 +33,42 @@ export function Combobox({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [options, setOptions] = useState<Option[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [label, setLabel] = useState(initialLabel ?? "");
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selected = useMemo(
-    () => options.find((o) => String(o.id) === value),
-    [options, value]
-  );
+  const paramsKey = useMemo(() => JSON.stringify(params ?? {}), [params]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = q ? options.filter((o) => o.name.toLowerCase().includes(q)) : options;
-    return list.slice(0, LIMIT);
-  }, [query, options]);
+  // If the value is cleared externally (e.g. broker reset on party change), drop the label.
+  useEffect(() => {
+    if (!value) setLabel("");
+  }, [value]);
+
+  // Debounced fetch while open.
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    setLoading(true);
+    const handle = setTimeout(async () => {
+      try {
+        const sp = new URLSearchParams({ type, q: query, ...(params ?? {}) });
+        const res = await fetch(`/api/master?${sp.toString()}`);
+        const data = await res.json();
+        if (active) setOptions(data.options ?? []);
+      } catch {
+        if (active) setOptions([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }, 180);
+    return () => {
+      active = false;
+      clearTimeout(handle);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, query, type, paramsKey]);
 
   useEffect(() => {
     if (!open) return;
@@ -66,17 +95,18 @@ export function Combobox({
           "flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-input bg-card px-3 text-sm shadow-sm transition-colors",
           "focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          !selected && "text-muted-foreground"
+          !label && "text-muted-foreground"
         )}
       >
-        <span className="truncate">{selected ? selected.name : placeholder}</span>
+        <span className="truncate">{label || placeholder}</span>
         <span className="flex items-center gap-1">
-          {allowClear && selected && !disabled && (
+          {allowClear && label && !disabled && (
             <X
               className="h-3.5 w-3.5 opacity-50 hover:opacity-100"
               onClick={(e) => {
                 e.stopPropagation();
-                onChange("");
+                onChange("", "");
+                setLabel("");
               }}
             />
           )}
@@ -87,7 +117,11 @@ export function Combobox({
       {open && (
         <div className="absolute z-40 mt-1 w-full overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-pop)] animate-fade-in">
           <div className="flex items-center gap-2 border-b border-border px-3">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            {loading ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+            ) : (
+              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
             <input
               ref={inputRef}
               value={query}
@@ -97,15 +131,18 @@ export function Combobox({
             />
           </div>
           <ul className="max-h-64 overflow-y-auto py-1">
-            {filtered.length === 0 && (
-              <li className="px-3 py-2 text-sm text-muted-foreground">No matches</li>
+            {!loading && options.length === 0 && (
+              <li className="px-3 py-2 text-sm text-muted-foreground">
+                {query ? "No matches" : "Type to search…"}
+              </li>
             )}
-            {filtered.map((o) => (
+            {options.map((o) => (
               <li key={o.id}>
                 <button
                   type="button"
                   onClick={() => {
-                    onChange(String(o.id));
+                    onChange(String(o.id), o.name);
+                    setLabel(o.name);
                     setOpen(false);
                   }}
                   className={cn(
@@ -118,11 +155,6 @@ export function Combobox({
                 </button>
               </li>
             ))}
-            {query.trim() === "" && options.length > LIMIT && (
-              <li className="px-3 py-1.5 text-xs text-muted-foreground">
-                Showing {LIMIT} of {options.length} — type to search
-              </li>
-            )}
           </ul>
         </div>
       )}

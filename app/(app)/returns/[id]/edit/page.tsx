@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/rbac";
 import { getReturnDetail } from "@/lib/returns-query";
-import { getFormMasterData } from "@/lib/master-data";
 import { PageHeader } from "@/components/page-header";
-import { ReturnForm, type FormValues } from "@/app/(app)/returns/new/return-form";
+import {
+  ReturnForm,
+  type FormValues,
+  type ReturnInitialLabels,
+} from "@/app/(app)/returns/new/return-form";
 import { updateReturn } from "./actions";
 
 export const metadata = { title: "Edit Return · Goods Return System" };
@@ -18,7 +21,7 @@ export default async function EditReturnPage({
   const numId = Number(id);
   if (!Number.isInteger(numId)) notFound();
 
-  const [detail, master] = await Promise.all([getReturnDetail(numId), getFormMasterData()]);
+  const detail = await getReturnDetail(numId);
   if (!detail) notFound();
 
   const initial: FormValues = {
@@ -45,14 +48,21 @@ export default async function EditReturnPage({
         : [{ qualityId: "", quantity: "", pieces: "" }],
   };
 
+  const initialLabels: ReturnInitialLabels = {
+    party: detail.partyName ?? undefined,
+    broker: detail.brokerName ?? undefined,
+    transport: detail.transportName ?? undefined,
+    items: detail.items.map((it) => it.qualityName ?? undefined),
+  };
+
   return (
     <div className="space-y-6 max-w-3xl">
       <PageHeader title={`Edit ${detail.displayId}`} description="Update this goods-return entry." />
       <ReturnForm
-        master={master}
         action={updateReturn}
         mode="edit"
         initial={initial}
+        initialLabels={initialLabels}
         returnId={detail.id}
         existingAttachmentUrl={detail.attachmentUrl}
         submitLabel="Save changes"

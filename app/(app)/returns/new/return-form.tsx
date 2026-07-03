@@ -1,19 +1,25 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Combobox } from "@/components/ui/combobox";
+import { AsyncCombobox } from "@/components/ui/async-combobox";
 import { returnInputSchema, type ReturnInput } from "@/lib/validation";
 import type { ReturnFormResult } from "@/lib/return-form";
-import type { FormMasterData } from "@/lib/master-data";
 import { ENTRY_FOR_OPTIONS, RETURN_REASONS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export type ReturnInitialLabels = {
+  party?: string;
+  broker?: string;
+  transport?: string;
+  items?: (string | undefined)[];
+};
 
 export type FormValues = {
   billNo: string;
@@ -52,20 +58,20 @@ const blankValues: FormValues = {
 };
 
 type Props = {
-  master: FormMasterData;
   action: (formData: FormData) => Promise<ReturnFormResult>;
   mode?: "create" | "edit";
   initial?: FormValues;
+  initialLabels?: ReturnInitialLabels;
   returnId?: number;
   existingAttachmentUrl?: string | null;
   submitLabel?: string;
 };
 
 export function ReturnForm({
-  master,
   action,
   mode = "create",
   initial,
+  initialLabels,
   returnId,
   existingAttachmentUrl,
   submitLabel,
@@ -93,10 +99,6 @@ export function ReturnForm({
 
   const selectedParty = watch("partyId");
   const returnReason = watch("returnReason");
-  const brokerOptions = useMemo(
-    () => (selectedParty ? master.brokersByParty[Number(selectedParty)] ?? [] : []),
-    [selectedParty, master.brokersByParty]
-  );
 
   const onValid = (values: ReturnInput) => {
     const fd = new FormData();
@@ -225,10 +227,11 @@ export function ReturnForm({
               control={control}
               name="partyId"
               render={({ field }) => (
-                <Combobox
+                <AsyncCombobox
+                  type="party"
                   id="partyId"
-                  options={master.parties}
                   value={field.value}
+                  initialLabel={initialLabels?.party}
                   onChange={(v) => {
                     field.onChange(v);
                     setValue("brokerId", "");
@@ -247,12 +250,14 @@ export function ReturnForm({
               control={control}
               name="brokerId"
               render={({ field }) => (
-                <Combobox
+                <AsyncCombobox
+                  type="broker"
                   id="brokerId"
-                  options={brokerOptions}
                   value={field.value}
-                  onChange={field.onChange}
+                  initialLabel={initialLabels?.broker}
+                  params={selectedParty ? { partyId: selectedParty } : undefined}
                   disabled={!selectedParty}
+                  onChange={(v) => field.onChange(v)}
                   placeholder={selectedParty ? "Select broker…" : "Select a party first"}
                 />
               )}
@@ -281,10 +286,11 @@ export function ReturnForm({
                   control={control}
                   name={`items.${index}.qualityId` as const}
                   render={({ field }) => (
-                    <Combobox
-                      options={master.qualities}
+                    <AsyncCombobox
+                      type="quality"
                       value={field.value}
-                      onChange={field.onChange}
+                      initialLabel={initialLabels?.items?.[index]}
+                      onChange={(v) => field.onChange(v)}
                       placeholder="Search quality…"
                     />
                   )}
@@ -336,11 +342,12 @@ export function ReturnForm({
               control={control}
               name="transportId"
               render={({ field }) => (
-                <Combobox
+                <AsyncCombobox
+                  type="transport"
                   id="transportId"
-                  options={master.transports}
                   value={field.value}
-                  onChange={field.onChange}
+                  initialLabel={initialLabels?.transport}
+                  onChange={(v) => field.onChange(v)}
                   allowClear
                   placeholder="Search transport… (optional)"
                 />

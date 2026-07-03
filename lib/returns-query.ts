@@ -65,6 +65,9 @@ export async function getReturnsList(f: ReturnsFilter) {
       partyName: parties.name,
       brokerName: brokers.name,
       createdAt: returns.createdAt,
+      receivedAt: returns.receivedAt,
+      bhiwandiTransportValue: returns.bhiwandiTransportValue,
+      bhiwandiCharges: returns.bhiwandiCharges,
       itemCount: sql<number>`(select count(*)::int from ${returnItems} ri where ri.return_id = ${returns.id})`,
     })
     .from(returns)
