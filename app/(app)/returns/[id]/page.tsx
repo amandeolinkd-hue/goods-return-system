@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusBadge } from "@/components/returns/status-badge";
 import { ReceiveAction } from "@/components/returns/receive-action";
+import { StatusTimeline } from "@/components/returns/status-timeline";
 import { formatDate, formatDateTime, formatINR } from "@/lib/utils";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -62,6 +63,19 @@ export default async function ReturnDetailPage({
           </div>
         }
       />
+
+      <Card>
+        <CardContent className="pt-6">
+          <StatusTimeline
+            createdAt={detail.createdAt}
+            createdByName={detail.createdByName}
+            postedOn={detail.postedOn}
+            status={detail.status}
+            receivedAt={detail.receivedAt}
+            receivedByName={detail.receivedByName}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

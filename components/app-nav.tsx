@@ -22,15 +22,26 @@ import { ROLE_LABELS, type Role } from "@/lib/roles";
 import type { SessionUser } from "@/lib/rbac";
 
 type Item = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; roles: Role[] };
+type Group = { label: string; items: Item[] };
 
-const NAV: Item[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "kalbadevi", "bhiwandi"] },
-  { href: "/returns/new", label: "New Return", icon: PlusCircle, roles: ["admin", "kalbadevi"] },
-  { href: "/returns", label: "All Returns", icon: ClipboardList, roles: ["admin", "kalbadevi", "bhiwandi"] },
-  { href: "/receiving", label: "Receiving", icon: PackageCheck, roles: ["admin", "bhiwandi"] },
-  { href: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "kalbadevi", "bhiwandi"] },
-  { href: "/admin/users", label: "Users", icon: Users, roles: ["admin"] },
-  { href: "/admin/master-data", label: "Master Data", icon: Database, roles: ["admin"] },
+const GROUPS: Group[] = [
+  {
+    label: "Operations",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "kalbadevi", "bhiwandi"] },
+      { href: "/returns/new", label: "New Return", icon: PlusCircle, roles: ["admin", "kalbadevi"] },
+      { href: "/returns", label: "All Returns", icon: ClipboardList, roles: ["admin", "kalbadevi", "bhiwandi"] },
+      { href: "/receiving", label: "Receiving", icon: PackageCheck, roles: ["admin", "bhiwandi"] },
+      { href: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "kalbadevi", "bhiwandi"] },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { href: "/admin/users", label: "Users", icon: Users, roles: ["admin"] },
+      { href: "/admin/master-data", label: "Master Data", icon: Database, roles: ["admin"] },
+    ],
+  },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -48,11 +59,11 @@ function initials(name?: string | null, email?: string | null) {
 }
 
 function SidebarBody({
-  items,
+  groups,
   user,
   onNavigate,
 }: {
-  items: Item[];
+  groups: Group[];
   user: SessionUser;
   onNavigate?: () => void;
 }) {
@@ -71,26 +82,33 @@ function SidebarBody({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {items.map((item) => {
-          const active = isActive(pathname, item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                active
-                  ? "bg-sidebar-active text-white shadow-sm"
-                  : "text-sidebar-foreground hover:bg-white/5 hover:text-white"
-              )}
-            >
-              <item.icon className="h-[18px] w-[18px] shrink-0" />
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        {groups.map((group) => (
+          <div key={group.label} className="space-y-1">
+            <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted/80">
+              {group.label}
+            </div>
+            {group.items.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-sidebar-active text-white shadow-sm"
+                      : "text-sidebar-foreground hover:bg-white/5 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-[18px] w-[18px] shrink-0" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* User */}
@@ -121,13 +139,16 @@ function SidebarBody({
 
 export function AppNav({ user }: { user: SessionUser }) {
   const [open, setOpen] = useState(false);
-  const items = NAV.filter((n) => n.roles.includes(user.role));
+  const groups = GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => i.roles.includes(user.role)),
+  })).filter((g) => g.items.length > 0);
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 z-30">
-        <SidebarBody items={items} user={user} />
+        <SidebarBody groups={groups} user={user} />
       </aside>
 
       {/* Mobile top bar */}
@@ -159,7 +180,7 @@ export function AppNav({ user }: { user: SessionUser }) {
             >
               <X className="h-5 w-5" />
             </button>
-            <SidebarBody items={items} user={user} onNavigate={() => setOpen(false)} />
+            <SidebarBody groups={groups} user={user} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       )}

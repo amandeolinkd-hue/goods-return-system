@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { PackageCheck, X } from "lucide-react";
 import { markReceived } from "@/app/(app)/receiving/actions";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export function ReceiveAction({
       if (res.error) setError(res.error);
       else {
         setOpen(false);
+        toast.success(`${displayId ?? "Return"} marked received`);
         router.refresh();
       }
     });

@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AsyncCombobox } from "@/components/ui/async-combobox";
@@ -124,15 +125,17 @@ export function ReturnForm({
     startTransition(async () => {
       const res = await action(fd);
       setResult(res);
-      if (!res.error) {
-        if (mode === "edit" && returnId) {
-          router.push(`/returns/${returnId}`);
-          router.refresh();
-        } else {
-          reset(blankValues);
-          if (fileRef.current) fileRef.current.value = "";
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
+      if (res.error) {
+        toast.error(res.error);
+      } else if (mode === "edit" && returnId) {
+        toast.success("Changes saved");
+        router.push(`/returns/${returnId}`);
+        router.refresh();
+      } else {
+        toast.success(`Return ${res.displayId} saved`);
+        reset(blankValues);
+        if (fileRef.current) fileRef.current.value = "";
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     });
   };
@@ -391,7 +394,7 @@ export function ReturnForm({
         </CardContent>
       </Card>
 
-      <div className="flex items-center gap-3">
+      <div className="sticky bottom-4 z-10 flex items-center gap-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-[var(--shadow-md)] backdrop-blur">
         <Button type="submit" size="lg" disabled={isPending}>
           {isPending ? "Saving…" : submitLabel ?? "Submit return"}
         </Button>
@@ -401,7 +404,7 @@ export function ReturnForm({
           </Button>
         )}
         {mode === "create" && (
-          <span className="text-sm text-muted-foreground">
+          <span className="hidden text-sm text-muted-foreground sm:inline">
             A unique LD-#### id is assigned automatically.
           </span>
         )}

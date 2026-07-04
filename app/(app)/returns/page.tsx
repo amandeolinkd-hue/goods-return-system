@@ -11,25 +11,15 @@ import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusBadge } from "@/components/returns/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
+import { SearchX } from "lucide-react";
 import { formatDate, formatINR } from "@/lib/utils";
 
 export const metadata = { title: "All Returns · Goods Return System" };
 
 type SP = Record<string, string | string[] | undefined>;
 const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || "";
-
-function buildQuery(sp: SP, overrides: Record<string, string | number | undefined>) {
-  const p = new URLSearchParams();
-  for (const k of ["search", "status", "partyId", "reason", "dateFrom", "dateTo", "page"]) {
-    const v = str(sp[k]);
-    if (v) p.set(k, v);
-  }
-  for (const [k, v] of Object.entries(overrides)) {
-    if (v === undefined || v === "") p.delete(k);
-    else p.set(k, String(v));
-  }
-  return `/returns?${p.toString()}`;
-}
 
 export default async function ReturnsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
@@ -146,6 +136,13 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
       {/* Table */}
       <Card>
         <CardContent className="px-0 py-0">
+          {list.rows.length === 0 ? (
+            <EmptyState
+              icon={SearchX}
+              title="No returns found"
+              description="Try adjusting your search or filters."
+            />
+          ) : (
           <Table>
             <THead>
               <TR>
@@ -161,13 +158,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
               </TR>
             </THead>
             <TBody>
-              {list.rows.length === 0 ? (
-                <TR>
-                  <TD className="pl-6 py-8 text-muted-foreground" colSpan={9}>
-                    No returns match these filters.
-                  </TD>
-                </TR>
-              ) : (
+              {list.rows.length === 0 ? null : (
                 list.rows.map((r) => (
                   <TR key={r.id}>
                     <TD className="pl-6 font-medium">
@@ -194,29 +185,17 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
               )}
             </TBody>
           </Table>
+          )}
         </CardContent>
       </Card>
 
-      {/* Pagination */}
-      {list.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {list.page} of {list.totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Link href={buildQuery(sp, { page: list.page - 1 })} aria-disabled={list.page <= 1}>
-              <Button variant="outline" size="sm" disabled={list.page <= 1}>
-                Previous
-              </Button>
-            </Link>
-            <Link href={buildQuery(sp, { page: list.page + 1 })} aria-disabled={list.page >= list.totalPages}>
-              <Button variant="outline" size="sm" disabled={list.page >= list.totalPages}>
-                Next
-              </Button>
-            </Link>
-          </div>
-        </div>
-      )}
+      <Pagination
+        basePath="/returns"
+        params={Object.fromEntries(exportParams)}
+        page={list.page}
+        totalPages={list.totalPages}
+        totalLabel={`${list.total} ${list.total === 1 ? "entry" : "entries"} · page ${list.page} of ${list.totalPages}`}
+      />
     </div>
   );
 }
