@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronsUpDown, Check, Search, X, Loader2 } from "lucide-react";
+import { ChevronsUpDown, Check, Search, X, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Option = { id: number; name: string };
@@ -19,6 +19,8 @@ export function AsyncCombobox({
   placeholder = "Search…",
   disabled,
   allowClear,
+  onCreate,
+  createLabel = "item",
   id,
 }: {
   type: "party" | "broker" | "quality" | "transport";
@@ -29,12 +31,15 @@ export function AsyncCombobox({
   placeholder?: string;
   disabled?: boolean;
   allowClear?: boolean;
+  onCreate?: (name: string) => Promise<{ id: number; name: string } | null>;
+  createLabel?: string;
   id?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [label, setLabel] = useState(initialLabel ?? "");
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +89,22 @@ export function AsyncCombobox({
     else setQuery("");
   }, [open]);
 
+  const trimmed = query.trim();
+  const exactMatch = options.some((o) => o.name.toLowerCase() === trimmed.toLowerCase());
+  const showCreate = !!onCreate && trimmed.length > 0 && !exactMatch && !loading;
+
+  const handleCreate = async () => {
+    if (!onCreate || !trimmed || creating) return;
+    setCreating(true);
+    const res = await onCreate(trimmed);
+    setCreating(false);
+    if (res) {
+      onChange(String(res.id), res.name);
+      setLabel(res.name);
+      setOpen(false);
+    }
+  };
+
   return (
     <div className="relative" ref={rootRef}>
       <button
@@ -131,7 +152,7 @@ export function AsyncCombobox({
             />
           </div>
           <ul className="max-h-64 overflow-y-auto py-1">
-            {!loading && options.length === 0 && (
+            {!loading && options.length === 0 && !showCreate && (
               <li className="px-3 py-2 text-sm text-muted-foreground">
                 {query ? "No matches" : "Type to search…"}
               </li>
@@ -155,6 +176,25 @@ export function AsyncCombobox({
                 </button>
               </li>
             ))}
+            {showCreate && (
+              <li className="border-t border-border">
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={creating}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-primary hover:bg-muted disabled:opacity-60"
+                >
+                  {creating ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4 shrink-0" />
+                  )}
+                  <span className="truncate">
+                    Add “{trimmed}”{createLabel ? ` as new ${createLabel}` : ""}
+                  </span>
+                </button>
+              </li>
+            )}
           </ul>
         </div>
       )}

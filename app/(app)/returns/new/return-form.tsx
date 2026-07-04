@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AsyncCombobox } from "@/components/ui/async-combobox";
+import { quickAddMaster } from "./master-actions";
+import type { MasterType } from "@/lib/master-data";
 import { returnInputSchema, type ReturnInput } from "@/lib/validation";
 import type { ReturnFormResult } from "@/lib/return-form";
 import { ENTRY_FOR_OPTIONS, RETURN_REASONS } from "@/lib/constants";
@@ -101,6 +103,23 @@ export function ReturnForm({
   const selectedParty = watch("partyId");
   const returnReason = watch("returnReason");
 
+  // Inline "add new" for the pickers — creates the master row and selects it.
+  const makeCreator =
+    (type: MasterType, label: string, mapToParty = false) =>
+    async (name: string) => {
+      const res = await quickAddMaster(
+        type,
+        name,
+        mapToParty && selectedParty ? Number(selectedParty) : undefined
+      );
+      if (res.error || !res.id) {
+        toast.error(res.error ?? "Could not add");
+        return null;
+      }
+      toast.success(`Added ${label} “${res.name}”`);
+      return { id: res.id, name: res.name as string };
+    };
+
   const onValid = (values: ReturnInput) => {
     const fd = new FormData();
     if (mode === "edit" && returnId) fd.set("returnId", String(returnId));
@@ -156,6 +175,8 @@ export function ReturnForm({
         </div>
       )}
 
+      <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+      <div className="space-y-6">
       {/* Basic details */}
       <Card>
         <CardHeader>
@@ -239,6 +260,8 @@ export function ReturnForm({
                     field.onChange(v);
                     setValue("brokerId", "");
                   }}
+                  onCreate={makeCreator("parties", "party")}
+                  createLabel="party"
                   placeholder="Search party…"
                 />
               )}
@@ -261,6 +284,8 @@ export function ReturnForm({
                   params={selectedParty ? { partyId: selectedParty } : undefined}
                   disabled={!selectedParty}
                   onChange={(v) => field.onChange(v)}
+                  onCreate={selectedParty ? makeCreator("brokers", "broker", true) : undefined}
+                  createLabel="broker"
                   placeholder={selectedParty ? "Select broker…" : "Select a party first"}
                 />
               )}
@@ -270,6 +295,8 @@ export function ReturnForm({
         </CardContent>
       </Card>
 
+      </div>
+      <div className="space-y-6">
       {/* Quality lines */}
       <Card>
         <CardHeader>
@@ -294,6 +321,8 @@ export function ReturnForm({
                       value={field.value}
                       initialLabel={initialLabels?.items?.[index]}
                       onChange={(v) => field.onChange(v)}
+                      onCreate={makeCreator("qualities", "quality")}
+                      createLabel="quality"
                       placeholder="Search quality…"
                     />
                   )}
@@ -351,6 +380,8 @@ export function ReturnForm({
                   value={field.value}
                   initialLabel={initialLabels?.transport}
                   onChange={(v) => field.onChange(v)}
+                  onCreate={makeCreator("transports", "transport")}
+                  createLabel="transport"
                   allowClear
                   placeholder="Search transport… (optional)"
                 />
@@ -393,6 +424,9 @@ export function ReturnForm({
           </div>
         </CardContent>
       </Card>
+
+      </div>
+      </div>
 
       <div className="sticky bottom-4 z-10 flex items-center gap-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-[var(--shadow-md)] backdrop-blur">
         <Button type="submit" size="lg" disabled={isPending}>

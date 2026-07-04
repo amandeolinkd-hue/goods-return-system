@@ -56,7 +56,7 @@ export default async function EditReturnPage({
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-6xl">
       <PageHeader title={`Edit ${detail.displayId}`} description="Update this goods-return entry." />
       <ReturnForm
         action={updateReturn}
