@@ -12,7 +12,7 @@ export default async function NewReturnPage() {
   const ready = await hasMasterData();
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-4xl">
       <PageHeader
         title="New Goods Return"
         description="Record a return to post to the Bhiwandi office."

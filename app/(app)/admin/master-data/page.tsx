@@ -7,8 +7,16 @@ import { Tabs } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { AddMasterEntry } from "./add-entry";
 
 export const metadata = { title: "Master Data · Goods Return System" };
+
+const SINGULAR: Record<MasterType, string> = {
+  parties: "party",
+  brokers: "broker",
+  qualities: "quality",
+  transports: "transport",
+};
 
 type SP = Record<string, string | string[] | undefined>;
 const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || "";
@@ -59,24 +67,33 @@ export default async function MasterDataPage({ searchParams }: { searchParams: P
       />
 
       <Card>
-        <CardContent className="pt-5">
-          <form method="get" action="/admin/master-data" className="flex gap-2">
-            <input type="hidden" name="tab" value={tab} />
-            <Input
-              name="q"
-              defaultValue={q}
-              placeholder={`Search ${TAB_LABELS[tab].toLowerCase()}…`}
-              className="max-w-sm"
-            />
-            <Button type="submit">Search</Button>
-            {q && (
-              <Link href={`/admin/master-data?tab=${tab}`}>
-                <Button type="button" variant="outline">
-                  Clear
-                </Button>
-              </Link>
-            )}
-          </form>
+        <CardContent className="pt-5 space-y-4">
+          <div>
+            <p className="mb-1.5 text-sm font-medium">Add a {SINGULAR[tab]}</p>
+            <AddMasterEntry type={tab} label={SINGULAR[tab]} />
+          </div>
+          <div className="border-t border-border pt-4">
+            <p className="mb-1.5 text-sm font-medium">Search</p>
+            <form method="get" action="/admin/master-data" className="flex gap-2">
+              <input type="hidden" name="tab" value={tab} />
+              <Input
+                name="q"
+                defaultValue={q}
+                placeholder={`Search ${TAB_LABELS[tab].toLowerCase()}…`}
+                className="max-w-sm"
+              />
+              <Button type="submit" variant="outline">
+                Search
+              </Button>
+              {q && (
+                <Link href={`/admin/master-data?tab=${tab}`}>
+                  <Button type="button" variant="ghost">
+                    Clear
+                  </Button>
+                </Link>
+              )}
+            </form>
+          </div>
         </CardContent>
       </Card>
 

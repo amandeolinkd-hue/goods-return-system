@@ -44,9 +44,13 @@ const GROUPS: Group[] = [
   },
 ];
 
-function isActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === "/dashboard";
-  return pathname === href || pathname.startsWith(href + "/");
+// The active item is the one whose href is the LONGEST prefix of the current
+// path — so /returns/new highlights "New Return", not also "All Returns".
+function computeActiveHref(pathname: string, groups: Group[]): string | undefined {
+  return groups
+    .flatMap((g) => g.items.map((i) => i.href))
+    .filter((h) => pathname === h || pathname.startsWith(h + "/"))
+    .sort((a, b) => b.length - a.length)[0];
 }
 
 function initials(name?: string | null, email?: string | null) {
@@ -68,6 +72,7 @@ function SidebarBody({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const activeHref = computeActiveHref(pathname, groups);
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       {/* Brand */}
@@ -89,7 +94,7 @@ function SidebarBody({
               {group.label}
             </div>
             {group.items.map((item) => {
-              const active = isActive(pathname, item.href);
+              const active = item.href === activeHref;
               return (
                 <Link
                   key={item.href}

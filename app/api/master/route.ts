@@ -54,6 +54,24 @@ export async function GET(req: NextRequest) {
         )
         .orderBy(asc(brokers.name))
         .limit(50);
+
+      // If the party has NO broker mappings at all (e.g. a newly-added party),
+      // fall back to all brokers so the field isn't stuck empty.
+      if (options.length === 0) {
+        const anyMapping = await db
+          .select({ b: partyBrokers.brokerId })
+          .from(partyBrokers)
+          .where(eq(partyBrokers.partyId, partyId))
+          .limit(1);
+        if (anyMapping.length === 0) {
+          options = await db
+            .select({ id: brokers.id, name: brokers.name })
+            .from(brokers)
+            .where(q ? ilike(brokers.name, like) : undefined)
+            .orderBy(asc(brokers.name))
+            .limit(50);
+        }
+      }
     }
   } else {
     return NextResponse.json({ error: "unknown type" }, { status: 400 });
