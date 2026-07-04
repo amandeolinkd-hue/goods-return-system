@@ -203,18 +203,35 @@ async function main() {
 
   // ---------- 3. Entries (kalbadevi) ----------
   let inserted = 0;
-  let maxSeq = 0;
   const warnings: string[] = [];
+
+  // Pre-scan for the highest existing LD number, so rows that are missing an
+  // LD id can be assigned the next ids in sequence.
+  let maxSeq = 0;
+  if (kal) {
+    for (const row of kal.slice(1)) {
+      const m = String(row[0] ?? "").trim().toUpperCase().match(/^LD-(\d+)/);
+      if (m) maxSeq = Math.max(maxSeq, Number(m[1]));
+    }
+  }
+  let orphanSeq = maxSeq;
 
   if (kal) {
     for (const [i, row] of kal.slice(1).entries()) {
-      const displayId = String(row[0] ?? "").trim().toUpperCase();
+      let displayId = String(row[0] ?? "").trim().toUpperCase();
       if (!/^LD-\d+/.test(displayId)) {
-        warnings.push(`Row ${i + 2}: invalid LD id ("${row[0]}") — skipped`);
-        continue;
+        // No LD id in the sheet. If the row carries real data (a party, a
+        // total, or fabric lines), it's a genuine return that just lost its
+        // id — import it with the next id. Skip only truly empty rows.
+        const hasData =
+          !!row[6]?.trim() || num(row[12]) != null || splitMulti(row[8]).length > 0;
+        if (!hasData) {
+          warnings.push(`Row ${i + 2}: empty row — skipped`);
+          continue;
+        }
+        displayId = "LD-" + String(++orphanSeq).padStart(4, "0");
+        warnings.push(`Row ${i + 2}: missing LD id — assigned ${displayId}`);
       }
-      const seqNum = Number(displayId.replace(/^LD-/, ""));
-      if (Number.isFinite(seqNum)) maxSeq = Math.max(maxSeq, seqNum);
 
       const partyName = row[6]?.trim();
       const brokerName = row[7]?.trim();
@@ -302,9 +319,9 @@ async function main() {
   }
 
   // ---------- 4. Continue the LD sequence ----------
-  if (!DRY && maxSeq > 0) {
-    await db.execute(sql`select setval('return_display_seq', ${maxSeq}, true)`);
-    console.log(`\nSequence set to ${maxSeq}; next new id = LD-${String(maxSeq + 1).padStart(4, "0")}`);
+  if (!DRY && orphanSeq > 0) {
+    await db.execute(sql`select setval('return_display_seq', ${orphanSeq}, true)`);
+    console.log(`\nSequence set to ${orphanSeq}; next new id = LD-${String(orphanSeq + 1).padStart(4, "0")}`);
   }
 
   console.log(`${DRY ? "Would import" : "Imported"} ${inserted} returns; ${recvMap.size} marked received.`);
