@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LD Silk Mills — Goods Return System
 
-## Getting Started
+Two-office goods-return workflow (Kalbadevi entry → Bhiwandi receiving → reporting),
+built with Next.js 16, Neon Postgres, Drizzle ORM, and Auth.js. Replaces the original
+Google Apps Script + Sheets system.
 
-First, run the development server:
+## Tech stack
+
+- **Next.js 16** (App Router, Server Actions) + **React 19**
+- **Neon** serverless Postgres via **Drizzle ORM**
+- **Auth.js v5** credentials login with role-based access (admin / kalbadevi / bhiwandi)
+- **Vercel Blob** for attachments
+- **Tailwind CSS 4** + lucide-react + sonner
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # then fill in the values
+npm run db:migrate           # apply the schema to Neon
+npm run db:seed              # create the initial admin user
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment variables (`.env.local`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Var | What |
+|---|---|
+| `DATABASE_URL` | Neon pooled connection string |
+| `AUTH_SECRET` | Session secret (`npx auth secret`) |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token (for attachments) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Useful scripts
 
-## Learn More
+| Script | Purpose |
+|---|---|
+| `npm run db:generate` / `db:migrate` | Generate / apply Drizzle migrations |
+| `npm run db:seed` | Seed the initial admin user |
+| `npm run seed:users` | Seed test users for each role |
+| `npm run csv:inspect` | Inspect CSVs in `data/` before importing |
+| `npm run db:import` | Migrate the Google Sheets CSVs into Neon (`-- --dry` to preview) |
+| `npm run db:reset-data` | Clear all returns + master data (keeps users) |
 
-To learn more about Next.js, take a look at the following resources:
+## Roles
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **admin** — full access, user & master-data management
+- **kalbadevi** — create / edit returns
+- **bhiwandi** — receiving queue (mark received + charges)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment (Vercel)
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Import this repo on vercel.com.
+2. Add env vars: `DATABASE_URL`, `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`, `AUTH_TRUST_HOST=true`.
+3. Create a **Vercel Blob** store and connect it to the project (provides `BLOB_READ_WRITE_TOKEN`).
+4. Deploy. The app uses the same Neon database, which already holds the migrated data.
