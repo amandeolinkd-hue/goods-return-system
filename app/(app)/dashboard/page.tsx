@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/returns/status-badge";
+import { ReturnMobileList } from "@/components/returns/return-mobile-list";
 import { formatDate, formatINR } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard · Goods Return System" };
@@ -122,6 +123,9 @@ export default async function DashboardPage() {
               }
             />
           ) : (
+            <>
+            <ReturnMobileList rows={recent.rows} />
+            <div className="hidden sm:block">
             <Table>
               <THead>
                 <TR>
@@ -150,6 +154,8 @@ export default async function DashboardPage() {
                 ))}
               </TBody>
             </Table>
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusBadge } from "@/components/returns/status-badge";
+import { ReturnMobileList } from "@/components/returns/return-mobile-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchX } from "lucide-react";
@@ -71,8 +72,12 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
       {/* Filters */}
       <Card>
         <CardContent className="pt-5">
-          <form method="get" action="/returns" className="grid gap-3 md:grid-cols-6 items-end">
-            <div className="md:col-span-2">
+          <form
+            method="get"
+            action="/returns"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6 items-end"
+          >
+            <div className="sm:col-span-2">
               <Label htmlFor="search">Search</Label>
               <Input
                 id="search"
@@ -111,7 +116,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
                 ))}
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-2 md:col-span-2">
+            <div className="grid grid-cols-2 gap-2 sm:col-span-2 md:col-span-2">
               <div>
                 <Label htmlFor="dateFrom">From</Label>
                 <Input id="dateFrom" name="dateFrom" type="date" defaultValue={str(sp.dateFrom)} />
@@ -121,10 +126,12 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
                 <Input id="dateTo" name="dateTo" type="date" defaultValue={str(sp.dateTo)} />
               </div>
             </div>
-            <div className="flex gap-2 md:col-span-2">
-              <Button type="submit">Apply</Button>
-              <Link href="/returns">
-                <Button type="button" variant="outline">
+            <div className="flex gap-2 sm:col-span-2 md:col-span-2">
+              <Button type="submit" className="flex-1 sm:flex-none">
+                Apply
+              </Button>
+              <Link href="/returns" className="flex-1 sm:flex-none">
+                <Button type="button" variant="outline" className="w-full">
                   Reset
                 </Button>
               </Link>
@@ -143,15 +150,18 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
               description="Try adjusting your search or filters."
             />
           ) : (
+          <>
+          <ReturnMobileList rows={list.rows} />
+          <div className="hidden sm:block">
           <Table>
             <THead>
               <TR>
                 <TH className="pl-6">LD Id</TH>
                 <TH>Date</TH>
                 <TH>Party</TH>
-                <TH>Broker</TH>
-                <TH>Lines</TH>
-                <TH>Reason</TH>
+                <TH className="hidden lg:table-cell">Broker</TH>
+                <TH className="hidden lg:table-cell">Lines</TH>
+                <TH className="hidden md:table-cell">Reason</TH>
                 <TH className="text-right">Total</TH>
                 <TH>Status</TH>
                 <TH className="pr-6" />
@@ -168,9 +178,9 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
                     </TD>
                     <TD>{formatDate(r.dated)}</TD>
                     <TD>{r.partyName ?? "-"}</TD>
-                    <TD className="text-muted-foreground">{r.brokerName ?? "-"}</TD>
-                    <TD>{r.itemCount}</TD>
-                    <TD className="text-muted-foreground">{r.returnReason}</TD>
+                    <TD className="hidden lg:table-cell text-muted-foreground">{r.brokerName ?? "-"}</TD>
+                    <TD className="hidden lg:table-cell">{r.itemCount}</TD>
+                    <TD className="hidden md:table-cell text-muted-foreground">{r.returnReason}</TD>
                     <TD className="text-right tabular-nums">{formatINR(r.totalValue)}</TD>
                     <TD>
                       <StatusBadge status={r.status} />
@@ -185,6 +195,8 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
               )}
             </TBody>
           </Table>
+          </div>
+          </>
           )}
         </CardContent>
       </Card>

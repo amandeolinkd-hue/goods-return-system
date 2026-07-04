@@ -6,6 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { ReceiveAction } from "@/components/returns/receive-action";
+import { ReturnMobileList } from "@/components/returns/return-mobile-list";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Inbox, PackageCheck } from "lucide-react";
 import { formatDate, formatDateTime, formatINR } from "@/lib/utils";
 
 export const metadata = { title: "Receiving · Goods Return System" };
@@ -39,94 +42,101 @@ export default async function ReceivingPage({ searchParams }: { searchParams: Pr
 
       <Card>
         <CardContent className="px-0 py-0">
-          {tab === "pending" ? (
-            <Table>
-              <THead>
-                <TR>
-                  <TH className="pl-6">LD Id</TH>
-                  <TH>Date</TH>
-                  <TH>Party</TH>
-                  <TH>Broker</TH>
-                  <TH>Lines</TH>
-                  <TH>Reason</TH>
-                  <TH className="text-right">Total</TH>
-                  <TH className="pr-6">Action</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {list.rows.length === 0 ? (
-                  <TR>
-                    <TD className="pl-6 py-8 text-muted-foreground" colSpan={8}>
-                      Nothing pending — all posted returns have been received. 🎉
-                    </TD>
-                  </TR>
-                ) : (
-                  list.rows.map((r) => (
-                    <TR key={r.id}>
-                      <TD className="pl-6 font-medium">
-                        <Link href={`/returns/${r.id}`} className="text-primary hover:underline">
-                          {r.displayId}
-                        </Link>
-                      </TD>
-                      <TD>{formatDate(r.dated)}</TD>
-                      <TD>{r.partyName ?? "-"}</TD>
-                      <TD className="text-muted-foreground">{r.brokerName ?? "-"}</TD>
-                      <TD>{r.itemCount}</TD>
-                      <TD className="text-muted-foreground">{r.returnReason}</TD>
-                      <TD className="text-right tabular-nums">{formatINR(r.totalValue)}</TD>
-                      <TD className="pr-6">
-                        <ReceiveAction returnId={r.id} displayId={r.displayId} />
-                      </TD>
+          {list.rows.length === 0 ? (
+            <EmptyState
+              icon={tab === "pending" ? Inbox : PackageCheck}
+              title={tab === "pending" ? "Nothing pending" : "No received returns yet"}
+              description={
+                tab === "pending"
+                  ? "All posted returns have been received."
+                  : "Confirmed receipts will appear here."
+              }
+            />
+          ) : tab === "pending" ? (
+            <>
+              <ReturnMobileList
+                rows={list.rows}
+                renderAction={(r) => <ReceiveAction returnId={r.id} displayId={r.displayId} />}
+              />
+              <div className="hidden sm:block">
+                <Table>
+                  <THead>
+                    <TR>
+                      <TH className="pl-6">LD Id</TH>
+                      <TH>Date</TH>
+                      <TH>Party</TH>
+                      <TH className="hidden lg:table-cell">Broker</TH>
+                      <TH className="hidden lg:table-cell">Lines</TH>
+                      <TH className="hidden md:table-cell">Reason</TH>
+                      <TH className="text-right">Total</TH>
+                      <TH className="pr-6">Action</TH>
                     </TR>
-                  ))
-                )}
-              </TBody>
-            </Table>
+                  </THead>
+                  <TBody>
+                    {list.rows.map((r) => (
+                      <TR key={r.id}>
+                        <TD className="pl-6 font-medium">
+                          <Link href={`/returns/${r.id}`} className="text-primary hover:underline">
+                            {r.displayId}
+                          </Link>
+                        </TD>
+                        <TD>{formatDate(r.dated)}</TD>
+                        <TD>{r.partyName ?? "-"}</TD>
+                        <TD className="hidden lg:table-cell text-muted-foreground">{r.brokerName ?? "-"}</TD>
+                        <TD className="hidden lg:table-cell">{r.itemCount}</TD>
+                        <TD className="hidden md:table-cell text-muted-foreground">{r.returnReason}</TD>
+                        <TD className="text-right tabular-nums">{formatINR(r.totalValue)}</TD>
+                        <TD className="pr-6">
+                          <ReceiveAction returnId={r.id} displayId={r.displayId} />
+                        </TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+              </div>
+            </>
           ) : (
-            <Table>
-              <THead>
-                <TR>
-                  <TH className="pl-6">LD Id</TH>
-                  <TH>Date</TH>
-                  <TH>Party</TH>
-                  <TH>Received On</TH>
-                  <TH className="text-right">Transport (Balasaheb)</TH>
-                  <TH className="text-right">Bhiwandi Charges</TH>
-                  <TH className="pr-6" />
-                </TR>
-              </THead>
-              <TBody>
-                {list.rows.length === 0 ? (
-                  <TR>
-                    <TD className="pl-6 py-8 text-muted-foreground" colSpan={7}>
-                      No received returns yet.
-                    </TD>
-                  </TR>
-                ) : (
-                  list.rows.map((r) => (
-                    <TR key={r.id}>
-                      <TD className="pl-6 font-medium">
-                        <Link href={`/returns/${r.id}`} className="text-primary hover:underline">
-                          {r.displayId}
-                        </Link>
-                      </TD>
-                      <TD>{formatDate(r.dated)}</TD>
-                      <TD>{r.partyName ?? "-"}</TD>
-                      <TD className="text-muted-foreground">{formatDateTime(r.receivedAt)}</TD>
-                      <TD className="text-right tabular-nums text-muted-foreground">
-                        {formatINR(r.bhiwandiTransportValue)}
-                      </TD>
-                      <TD className="text-right tabular-nums">{formatINR(r.bhiwandiCharges)}</TD>
-                      <TD className="pr-6 text-right">
-                        <Link href={`/returns/${r.id}`} className="text-sm text-primary hover:underline">
-                          View
-                        </Link>
-                      </TD>
+            <>
+              <ReturnMobileList rows={list.rows} />
+              <div className="hidden sm:block">
+                <Table>
+                  <THead>
+                    <TR>
+                      <TH className="pl-6">LD Id</TH>
+                      <TH>Date</TH>
+                      <TH>Party</TH>
+                      <TH>Received On</TH>
+                      <TH className="hidden lg:table-cell text-right">Transport (Balasaheb)</TH>
+                      <TH className="text-right">Bhiwandi Charges</TH>
+                      <TH className="pr-6" />
                     </TR>
-                  ))
-                )}
-              </TBody>
-            </Table>
+                  </THead>
+                  <TBody>
+                    {list.rows.map((r) => (
+                      <TR key={r.id}>
+                        <TD className="pl-6 font-medium">
+                          <Link href={`/returns/${r.id}`} className="text-primary hover:underline">
+                            {r.displayId}
+                          </Link>
+                        </TD>
+                        <TD>{formatDate(r.dated)}</TD>
+                        <TD>{r.partyName ?? "-"}</TD>
+                        <TD className="text-muted-foreground">{formatDateTime(r.receivedAt)}</TD>
+                        <TD className="hidden lg:table-cell text-right tabular-nums text-muted-foreground">
+                          {formatINR(r.bhiwandiTransportValue)}
+                        </TD>
+                        <TD className="text-right tabular-nums">{formatINR(r.bhiwandiCharges)}</TD>
+                        <TD className="pr-6 text-right">
+                          <Link href={`/returns/${r.id}`} className="text-sm text-primary hover:underline">
+                            View
+                          </Link>
+                        </TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

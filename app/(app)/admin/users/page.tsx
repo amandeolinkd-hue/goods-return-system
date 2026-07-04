@@ -39,10 +39,10 @@ export default async function UsersPage() {
             <THead>
               <TR>
                 <TH className="pl-6">Name</TH>
-                <TH>Email</TH>
+                <TH className="hidden md:table-cell">Email</TH>
                 <TH>Role</TH>
                 <TH>Status</TH>
-                <TH>Created</TH>
+                <TH className="hidden lg:table-cell">Created</TH>
                 <TH className="text-right pr-6">Actions</TH>
               </TR>
             </THead>
@@ -55,7 +55,7 @@ export default async function UsersPage() {
                       <span className="ml-2 text-xs text-muted-foreground">(you)</span>
                     )}
                   </TD>
-                  <TD className="text-muted-foreground">{u.email}</TD>
+                  <TD className="hidden md:table-cell text-muted-foreground">{u.email}</TD>
                   <TD>{ROLE_LABELS[u.role]}</TD>
                   <TD>
                     {u.active ? (
@@ -64,7 +64,7 @@ export default async function UsersPage() {
                       <Badge tone="muted">Inactive</Badge>
                     )}
                   </TD>
-                  <TD className="text-muted-foreground">{formatDate(u.createdAt)}</TD>
+                  <TD className="hidden lg:table-cell text-muted-foreground">{formatDate(u.createdAt)}</TD>
                   <TD className="pr-6">
                     <UserRowActions
                       userId={u.id}

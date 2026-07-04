@@ -53,7 +53,7 @@ export function ReceiveAction({
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !pending && setOpen(false)} />
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-pop)] animate-fade-in">
+          <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-pop)] animate-fade-in">
             <button
               onClick={() => !pending && setOpen(false)}
               className="absolute right-4 top-4 rounded-md p-1 text-muted-foreground hover:bg-muted"
