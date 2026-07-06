@@ -1,5 +1,6 @@
-import { Package, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { OfficeLogin } from "@/components/office-login";
+import { BrandMark } from "@/components/brand-mark";
 
 export const metadata = {
   title: "Sign in · Goods Return System",
@@ -34,10 +35,8 @@ export default function LoginPage() {
           />
           <div className="relative rounded-[26px] border border-white/15 bg-white/[0.96] p-8 shadow-[0_40px_80px_-30px_rgba(4,6,20,.7)] backdrop-blur-xl sm:p-9">
             <div className="mb-7 flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-lg shadow-primary/30 ring-4 ring-primary/10">
-                <Package className="h-7 w-7" />
-              </div>
-              <h1 className="mt-4 text-xl font-bold tracking-tight">LD SILK MILLS</h1>
+              <BrandMark size={58} chip className="rounded-2xl p-2.5 shadow-md ring-1 ring-black/5" />
+              <h1 className="mt-3 text-xl font-bold tracking-tight">LD SILK MILLS</h1>
               <p className="text-sm text-muted-foreground">Goods Return System</p>
             </div>
 

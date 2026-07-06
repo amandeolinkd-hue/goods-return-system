@@ -10,12 +10,12 @@ import {
   PackageCheck,
   BarChart3,
   Database,
-  Package,
   Menu,
   X,
   LogOut,
 } from "lucide-react";
 import { signOutAction } from "@/app/actions/auth";
+import { BrandMark } from "@/components/brand-mark";
 import { cn } from "@/lib/utils";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import type { SessionUser } from "@/lib/rbac";
@@ -75,9 +75,7 @@ function SidebarBody({
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-gradient text-white shadow">
-          <Package className="h-5 w-5" />
-        </div>
+        <BrandMark size={28} chip />
         <div className="leading-none">
           <div className="text-sm font-bold text-white tracking-tight">LD SILK MILLS</div>
           <div className="text-[11px] text-sidebar-muted mt-1">Goods Return</div>
@@ -157,9 +155,7 @@ export function AppNav({ user }: { user: SessionUser }) {
       {/* Mobile top bar */}
       <header className="lg:hidden sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-card/90 backdrop-blur px-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-gradient text-white">
-            <Package className="h-4 w-4" />
-          </div>
+          <BrandMark size={30} />
           <span className="text-sm font-bold tracking-tight">LD SILK MILLS</span>
         </div>
         <button
