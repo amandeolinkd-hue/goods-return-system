@@ -12,6 +12,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "node --import tsx scripts/seed.ts",
+    "db:seed-offices": "node --import tsx scripts/seed-offices.ts",
     "db:import": "node --import tsx scripts/import.ts",
     "csv:inspect": "node --import tsx scripts/inspect-csv.ts",
     "db:reset-data": "node --import tsx scripts/reset-data.ts",

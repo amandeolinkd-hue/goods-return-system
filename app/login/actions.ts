@@ -2,22 +2,18 @@
 
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
+import { homePathForRole } from "@/lib/roles";
 
-export async function authenticate(
-  _prevState: string | undefined,
-  formData: FormData
-): Promise<string | undefined> {
+export async function signInAs(office: "head" | "bhiwandi"): Promise<{ error?: string }> {
+  const redirectTo = office === "bhiwandi" ? homePathForRole("bhiwandi") : homePathForRole("admin");
   try {
-    await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirectTo: (formData.get("callbackUrl") as string) || "/",
-    });
+    await signIn("credentials", { office, redirectTo });
+    return {};
   } catch (error) {
     if (error instanceof AuthError) {
-      return "Invalid email or password.";
+      return { error: "Could not sign in. Please try again." };
     }
-    // Re-throw redirect (NEXT_REDIRECT) and any other errors.
+    // Re-throw the redirect (NEXT_REDIRECT) so navigation happens.
     throw error;
   }
 }

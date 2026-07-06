@@ -1,42 +1,31 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { authConfig } from "./auth.config";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
+// One-tap office login. The login page sends `office` = "head" | "bhiwandi";
+// we map it to the matching office user row (no password). Returning the real
+// DB id keeps created_by / received_by attribution working.
+const OFFICE_EMAIL: Record<string, string> = {
+  head: "head-office@ldsilk.local",
+  bhiwandi: "bhiwandi-office@ldsilk.local",
+};
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
   providers: [
     Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
+      credentials: { office: { label: "Office", type: "text" } },
       authorize: async (raw) => {
-        const parsed = credentialsSchema.safeParse(raw);
-        if (!parsed.success) return null;
+        const office = String(raw?.office ?? "").trim().toLowerCase();
+        const email = OFFICE_EMAIL[office];
+        if (!email) return null;
 
-        const email = parsed.data.email.trim().toLowerCase();
-        const rows = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, email))
-          .limit(1);
-
-        const user = rows[0];
+        const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
         if (!user || !user.active) return null;
-
-        const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
-        if (!ok) return null;
 
         return {
           id: String(user.id),

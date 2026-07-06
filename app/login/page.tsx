@@ -1,6 +1,5 @@
-import { Suspense } from "react";
 import { Package, ShieldCheck } from "lucide-react";
-import { LoginForm } from "@/components/login-form";
+import { OfficeLogin } from "@/components/office-login";
 
 export const metadata = {
   title: "Sign in · Goods Return System",
@@ -38,16 +37,14 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground">Goods Return System</p>
           </div>
 
-          <div className="mb-6">
+          <div className="mb-5">
             <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Sign in to continue to your dashboard.
+              Select your office to sign in.
             </p>
           </div>
 
-          <Suspense>
-            <LoginForm />
-          </Suspense>
+          <OfficeLogin />
         </div>
 
         <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-white/50">

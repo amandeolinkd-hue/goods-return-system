@@ -5,10 +5,11 @@ export type Role = "admin" | "kalbadevi" | "bhiwandi";
 
 export const ROLES: Role[] = ["admin", "kalbadevi", "bhiwandi"];
 
+// Head Office (full access) is backed by the `admin` role; Bhiwandi Office by `bhiwandi`.
 export const ROLE_LABELS: Record<Role, string> = {
-  admin: "Admin",
-  kalbadevi: "Kalbadevi (Entry)",
-  bhiwandi: "Bhiwandi (Receiving)",
+  admin: "Head Office",
+  kalbadevi: "Head Office",
+  bhiwandi: "Bhiwandi Office",
 };
 
 /** Landing page for each role after login. */
