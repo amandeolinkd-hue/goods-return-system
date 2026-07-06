@@ -168,3 +168,29 @@ body {
   .aurora-1, .aurora-2, .aurora-3 { animation: none; }
   .animate-rise-in, .animate-fade-in { animation: none; }
 }
+
+/* ---- Office login cards (colour-coded, per-card --c1/--c2) ---- */
+.office-btn {
+  position: relative; overflow: hidden;
+  transition: transform .18s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.office-btn::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--c1); opacity: 0; transition: opacity .22s ease;
+}
+.office-btn:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--c1) 45%, var(--border));
+  box-shadow: 0 14px 30px -14px color-mix(in srgb, var(--c1) 55%, transparent);
+}
+.office-btn:hover::before { opacity: 1; }
+.office-tile {
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--c1) 70%, transparent);
+}
+.office-arrow { transition: transform .2s ease, color .2s ease; }
+.office-btn:hover .office-arrow { transform: translateX(3px); color: var(--c1); }
+@media (prefers-reduced-motion: reduce) {
+  .office-btn:hover { transform: none; }
+  .office-btn:hover .office-arrow { transform: none; }
+}
