@@ -8,16 +8,16 @@ export function MiniBarChart({ data }: { data: { label: string; value: number }[
   }
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
-    <div className="flex h-44 items-end gap-2">
+    <div className="flex h-44 items-stretch gap-2">
       {data.map((d) => (
         <div key={d.label} className="group flex flex-1 flex-col items-center gap-1.5">
           <span className="text-[10px] font-medium tabular-nums text-muted-foreground">
             {d.value || ""}
           </span>
-          <div className="flex w-full flex-1 items-end">
+          <div className="flex min-h-0 w-full flex-1 items-end">
             <div
               className="w-full rounded-t-md bg-brand-gradient transition-opacity group-hover:opacity-80"
-              style={{ height: `${Math.max(d.value === 0 ? 0 : 6, (d.value / max) * 100)}%` }}
+              style={{ height: `${d.value === 0 ? 0 : Math.max(4, (d.value / max) * 100)}%` }}
               title={`${d.label}: ${d.value}`}
             />
           </div>
