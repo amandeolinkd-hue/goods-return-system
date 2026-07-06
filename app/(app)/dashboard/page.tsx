@@ -14,7 +14,7 @@ import { getReturnStats, getReturnsList } from "@/lib/returns-query";
 import { getReportData } from "@/lib/reports";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
-import { MiniBarChart } from "@/components/mini-bar-chart";
+import { ReturnsChart } from "@/components/returns-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -38,7 +38,9 @@ export default async function DashboardPage() {
     getReportData(),
   ]);
   const canCreate = hasRole(user, "admin", "kalbadevi");
-  const chart = [...report.byMonth].reverse().map((m) => ({ label: monthShort(m.month), value: m.n }));
+  const chart = [...report.byMonth]
+    .reverse()
+    .map((m) => ({ label: monthShort(m.month), n: m.n, value: m.value }));
 
   return (
     <div className="space-y-6">
@@ -79,7 +81,7 @@ export default async function DashboardPage() {
             </Link>
           </CardHeader>
           <CardContent>
-            <MiniBarChart data={chart} />
+            <ReturnsChart data={chart} />
           </CardContent>
         </Card>
 
