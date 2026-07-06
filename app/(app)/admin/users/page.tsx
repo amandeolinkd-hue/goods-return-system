@@ -68,6 +68,7 @@ export default async function UsersPage() {
                   <TD className="pr-6">
                     <UserRowActions
                       userId={u.id}
+                      name={u.name}
                       role={u.role}
                       active={u.active}
                       isSelf={Number(current.id) === u.id}

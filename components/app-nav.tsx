@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { signOutAction } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
@@ -126,6 +127,15 @@ function SidebarBody({
             <div className="truncate text-sm font-medium text-white">{user.name ?? user.email}</div>
             <div className="text-[11px] text-sidebar-muted">{ROLE_LABELS[user.role]}</div>
           </div>
+          <Link
+            href="/account"
+            onClick={onNavigate}
+            className="rounded-md p-2 text-sidebar-muted hover:bg-white/5 hover:text-white transition-colors"
+            aria-label="My account"
+            title="My account"
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
           <form action={signOutAction}>
             <button
               type="submit"

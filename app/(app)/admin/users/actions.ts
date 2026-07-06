@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { users } from "@/db/schema";
@@ -65,6 +65,27 @@ export async function setUserRole(userId: number, role: (typeof ROLES)[number]):
   if (!ROLES.includes(role)) return;
   await db.update(users).set({ role }).where(eq(users.id, userId));
   revalidatePath("/admin/users");
+}
+
+export async function deleteUser(userId: number): Promise<{ error?: string }> {
+  const admin = await requireRole("admin");
+  if (Number(admin.id) === userId) {
+    return { error: "You cannot delete your own account." };
+  }
+  // Block deletion if the user is tied to any entries (preserves history).
+  const [ref] = await db
+    .execute(
+      sql`select count(*)::int as n from returns where created_by = ${userId} or received_by = ${userId}`
+    )
+    .then((r) => r.rows as { n: number }[]);
+  if (ref.n > 0) {
+    return {
+      error: `This user is linked to ${ref.n} entr${ref.n === 1 ? "y" : "ies"}. Deactivate them instead.`,
+    };
+  }
+  await db.delete(users).where(eq(users.id, userId));
+  revalidatePath("/admin/users");
+  return {};
 }
 
 const resetSchema = z.object({
